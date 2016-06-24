@@ -35,9 +35,9 @@ Cnx_i = 0.1 * np.identity(D)
 W = init_weights((D,N), "weights")
 F = init_weights((N,K), "gweights")
 
-Y = tf.mul(W, X + Nx) # BxN
-Y = tf.tile(tf.expand_dims(Y, 1), (1, 1, K)) # BxNxK # XXX Hmmm how does this effect W
-E = tf.exp(-(Y - U)/(2 * V)) # BxNxK
+Y = tf.matmul(X + Nx, W) # B x N
+Y = tf.tile(tf.expand_dims(Y, 2), (1, 1, K)) # BxNxK # XXX Hmmm how does this effect W
+E = tf.exp(-tf.square(Y - U)/(2 * V)) # BxNxK
 G = tf.batch_matrix_diag(tf.reduce_sum(tf.log(F) * E, 2)) # BxNxN
 
 WCnxW = tf.matmul(tf.matmul(W, Cnx, transpose_a=True), W) # NxN
@@ -62,8 +62,12 @@ with tf.Session() as sess:
     tf.initialize_all_variables().run()
 
     for i in range(100):
-        X_i = np.random.randn(D)
-        sess.run(train_op, feed_dict={X: X_i, U: U_i, V: V_i})
+        X_i = np.random.randn(B,D)
+        Nx_i = np.random.randn(B,D)
+        Nr_i = np.random.randn(B,N)
+        sess.run(train_op, feed_dict={X: X_i, Nx: Nx_i, Nr: Nr_i,
+                                      U: U_i, V: V_i,
+                                      Cnr: Cnr_i, Cnx: Cnx_i})
         sess.run(normalize)
 
 # Notes
