@@ -16,8 +16,8 @@ def get_signal(name):
         wav_files = glob.glob('data/wavs/s1/*')
         return wavfile.read(wav_files[1])
     elif name == "harmonic":
-        nperiods = 10
         res = 2 ** 9 + 1
+        nperiods = ceil(def_Fs/res)
         x = np.zeros((res+1) * nperiods)
         #for i in range(1,4+1):
         for i in (1,2,4,8,16):
@@ -26,12 +26,12 @@ def get_signal(name):
     else:
         raise Exception("Unknown signal type")
 
-def get_cqt(Fs, name="mine"):
+def get_cqt(Fs, x, name="mine"):
     if name == "mine":
-        hop_length = 128
+        hop_length = 16
         b = 12 # Filters per octave
-        Fmin = 50
-        Fmax = Fmin * 2 ** 7
+        Fmin = 80
+        Fmax = Fmin * 2 ** 4
 
         K = int(ceil(b * log(Fmax/Fmin, 2))) # Number of cq bins
         Q = (2 ** (1./b) - 1) ** (-1)
@@ -43,16 +43,21 @@ def get_cqt(Fs, name="mine"):
         print "Fs=%f, Fmin=%f, Fmax=%f, K=%d, Q=%f" % (Fs, Fmin, Fmax, K, Q)
         #print x.shape[0]
 
-        for s in range(0, x.shape[0] - 10000, hop_length):
+        dummy_f = Fmin * 2 ** (1./b)
+        dummy_Nk = int(ceil(Q * Fs/dummy_f))
+        t = 0
+        for s in range(0, x.shape[0] - dummy_Nk, hop_length):
             for k in range(1,K+1):
                 f[k] = Fmin * 2 ** (float(k)/b)
                 N[k] = ceil(Q * Fs/f[k])
                 Nk = int(N[k])
                 ns = np.array(range(Nk))
+                #print Nk
 
                 e = np.exp(-2 * pi * 1j * (float(Q)/N[k]) * ns)
                 h = np.hamming(N[k]) * e
                 cq[k,t] = float(1)/Nk * np.dot(x[s:(s+Nk)], h)
+            t = t + 1
         return cq
     elif name == "librosa":
         return librosa.core.cqt(x, sr=Fs, hop_length=64, real=False)
@@ -64,7 +69,7 @@ def get_cqt(Fs, name="mine"):
 Fs, x = get_signal("harmonic")
 plt.subplot(321)
 plt.plot(x)
-cqt = get_cqt(Fs, "librosa")
+cqt = get_cqt(Fs, x, "mine")
 
 mag, phase = librosa.core.magphase(cqt)
 angle = np.angle(phase)
@@ -90,7 +95,8 @@ for k in range(angle.shape[0]):
     #if k in range(2,7):
     #if k in (6,14):
     #if k in (6,19,31,42):
-    if k in (7,19,31,43):
+    #if k in (7,19,31,43):
+    if k in (3,15,27,39):
         plt.plot(angle_diff[k,5:-5], label=('K=%d' % k))
     angle_diff[k,:] = (angle_diff[k,:] - kmean) / kmean
     #if k in (6,):
