@@ -1,5 +1,6 @@
 import pdb
 import numpy as np
+from numpy import fft
 from scipy.io import wavfile
 import glob
 import matplotlib.pyplot as plt
@@ -7,9 +8,10 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import librosa
 import math
 from math import log, ceil, pi
+from helpers import *
 
 signal_type = "speech"
-cqt_type = "mine"
+cqt_type = "wavelet"
 
 def get_signal(name):
     def_Fs = 25000
@@ -18,7 +20,7 @@ def get_signal(name):
     elif name == "speech":
         wav_files = glob.glob('data/wavs/s1/*')
         Fs, x = wavfile.read(wav_files[1])
-        return Fs, x[:6000]
+        return Fs, x
     elif name == "harmonic":
         res = 2 ** 9 + 1
         nperiods = ceil(def_Fs/res * 0.25)
@@ -31,7 +33,19 @@ def get_signal(name):
         raise Exception("Unknown signal type")
 
 def get_cqt(Fs, x, name="mine"):
-    if name == "mine":
+    if name == "wavelet":
+        N = 2 ** 13
+        x = x[:N]
+        Fx = fft.fft(x)
+        freqs = fft.fftfreq(N, 1./Fs)
+        wavelets = compute_wavelets(freqs)
+
+        wc = np.zeros((wavelets.shape[0], N), dtype=complex)
+        for i in range(wavelets.shape[0]):
+            wc[i,:] = fft.ifft(wavelets[i,:] * Fx)
+        wc = wc[:,range(0,N,2**4)] # Subsample FIXME?
+        return wc
+    elif name == "mine":
         hop_length = 64
         b = 12 # Filters per octave
         Fmin = 80
@@ -66,7 +80,7 @@ def get_cqt(Fs, x, name="mine"):
                 h = np.hamming(N[k]) * e
                 cq[k,t] = float(1)/Nk * np.dot(x[s:(s+Nk)], h)
             t = t + 1
-        return cq[:,:110]
+        return cq
     elif name == "librosa":
         return librosa.core.cqt(x, sr=Fs, hop_length=64, real=False)
     else:
