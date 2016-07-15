@@ -8,16 +8,20 @@ import librosa
 import math
 from math import log, ceil, pi
 
+signal_type = "speech"
+cqt_type = "mine"
+
 def get_signal(name):
     def_Fs = 25000
     if name == "noise":
         return def_Fs, np.random.randn(30000)
     elif name == "speech":
         wav_files = glob.glob('data/wavs/s1/*')
-        return wavfile.read(wav_files[1])
+        Fs, x = wavfile.read(wav_files[1])
+        return Fs, x[:6000]
     elif name == "harmonic":
         res = 2 ** 9 + 1
-        nperiods = ceil(def_Fs/res)
+        nperiods = ceil(def_Fs/res * 0.25)
         x = np.zeros((res+1) * nperiods)
         #for i in range(1,4+1):
         for i in (1,2,4,8,16):
@@ -28,7 +32,7 @@ def get_signal(name):
 
 def get_cqt(Fs, x, name="mine"):
     if name == "mine":
-        hop_length = 16
+        hop_length = 64
         b = 12 # Filters per octave
         Fmin = 80
         Fmax = Fmin * 2 ** 4
@@ -36,15 +40,19 @@ def get_cqt(Fs, x, name="mine"):
         K = int(ceil(b * log(Fmax/Fmin, 2))) # Number of cq bins
         Q = (2 ** (1./b) - 1) ** (-1)
 
+
         f = np.zeros(K+1)
         N = np.zeros(K+1)
         timepoints = int(ceil(x.shape[0] / hop_length))
-        cq = np.zeros((K+1, timepoints), dtype=complex)
+        cq = np.zeros((K+1, timepoints * 2), dtype=complex)
         print "Fs=%f, Fmin=%f, Fmax=%f, K=%d, Q=%f" % (Fs, Fmin, Fmax, K, Q)
         #print x.shape[0]
 
         dummy_f = Fmin * 2 ** (1./b)
         dummy_Nk = int(ceil(Q * Fs/dummy_f))
+        #x = np.lib.pad(x, (dummy_Nk, dummy_Nk), 'constant', constant_values=(0,0))
+        x = np.lib.pad(x, (dummy_Nk/4, dummy_Nk), 'constant', constant_values=(0,0))
+
         t = 0
         for s in range(0, x.shape[0] - dummy_Nk, hop_length):
             for k in range(1,K+1):
@@ -58,7 +66,7 @@ def get_cqt(Fs, x, name="mine"):
                 h = np.hamming(N[k]) * e
                 cq[k,t] = float(1)/Nk * np.dot(x[s:(s+Nk)], h)
             t = t + 1
-        return cq
+        return cq[:,:110]
     elif name == "librosa":
         return librosa.core.cqt(x, sr=Fs, hop_length=64, real=False)
     else:
@@ -66,10 +74,11 @@ def get_cqt(Fs, x, name="mine"):
 
 
 
-Fs, x = get_signal("harmonic")
+Fs, x = get_signal(signal_type)
 plt.subplot(321)
+plt.title("Input Signal")
 plt.plot(x)
-cqt = get_cqt(Fs, x, "mine")
+cqt = get_cqt(Fs, x, cqt_type)
 
 mag, phase = librosa.core.magphase(cqt)
 angle = np.angle(phase)
@@ -78,7 +87,7 @@ thresh_angle = np.copy(angle)
 thresh_angle[mag < thresh] = math.pi / 3
 
 #for k in (23, 24, 34, 35, 36, 37):
-plt.subplot(322)
+plt.subplot(323)
 plt.title("Phase Diff")
 angle_diff = np.copy(angle)
 for k in range(angle.shape[0]):
@@ -96,8 +105,13 @@ for k in range(angle.shape[0]):
     #if k in (6,14):
     #if k in (6,19,31,42):
     #if k in (7,19,31,43):
-    if k in (3,15,27,39):
-        plt.plot(angle_diff[k,5:-5], label=('K=%d' % k))
+    #if k in (8,20,31,14):
+    #if k in (25,37,):
+    #if k in (10,20,29):
+    if k in (10,20):
+    #if k in (3,15,27,39):
+        #plt.plot(angle_diff[k,5:-5], label=('K=%d' % k))
+        plt.plot(angle[k,5:-5], label=('K=%d' % k))
     angle_diff[k,:] = (angle_diff[k,:] - kmean) / kmean
     #if k in (6,):
 plt.legend()
@@ -107,7 +121,7 @@ thresh_angle_diff = np.copy(angle_diff)
 thresh_angle_diff[mag < thresh] = -5.0
 
 
-ax = plt.subplot(323)
+ax = plt.subplot(322)
 plt.title("CQT")
 im = ax.imshow(mag, interpolation='none')
 plt.gca().invert_yaxis()
@@ -115,7 +129,7 @@ divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="5%", pad=0.05)
 plt.colorbar(im, cax=cax)
 
-ax = plt.subplot(325)
+ax = plt.subplot(324)
 plt.title("Phase (Thresholded)")
 im = plt.imshow(thresh_angle, cmap=plt.get_cmap('hsv'), interpolation='none')
 plt.gca().invert_yaxis()
@@ -123,7 +137,7 @@ divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="5%", pad=0.05)
 plt.colorbar(im, cax=cax)
 
-ax = plt.subplot(324)
+ax = plt.subplot(325)
 plt.title("Phase")
 im = plt.imshow(angle, cmap=plt.get_cmap('hsv'), interpolation='none')
 plt.gca().invert_yaxis()
@@ -132,9 +146,9 @@ cax = divider.append_axes("right", size="5%", pad=0.05)
 plt.colorbar(im, cax=cax)
 
 ax = plt.subplot(326)
-plt.title("Phase Diff")
-vthresh=0.05
-im = ax.imshow(angle_diff, interpolation='none', vmin=-vthresh, vmax=vthresh)
+plt.title("Phase Diff (Threshold)")
+vthresh=1.00
+im = ax.imshow(thresh_angle_diff, interpolation='none', vmin=-vthresh, vmax=vthresh)
 plt.gca().invert_yaxis()
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="5%", pad=0.05)

@@ -10,9 +10,9 @@ Fs, x = wavfile.read(wav_files[0])
 #plt.plot(x)
 #plt.show()
 
-b = 12 # Filters per octave
-Fmin = 80
-Fmax = Fmin * 2 ** 6
+b = 1 # Filters per octave
+Fmin = 64
+Fmax = Fmin * 2 ** 4
 
 K = int(ceil(b * log(Fmax/Fmin, 2))) # Number of cq bins
 Q = (2 ** (1./b) - 1) ** (-1)
@@ -37,6 +37,6 @@ for k in range(1,K+1):
     for s in range(0, length - Nk, Nk):
         cq[k,s:s+Nk] = float(1)/Nk * np.dot(x[s:(s+Nk)], h)
 
-plt.imshow(np.abs(cq), aspect='auto')
+plt.imshow(np.abs(cq), aspect='auto', interpolation='none')
 plt.gca().invert_yaxis()
 plt.show()
