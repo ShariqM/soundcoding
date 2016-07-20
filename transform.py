@@ -30,7 +30,7 @@ def get_signal(name):
 
     if name == "white":
         white_noise = np.floor(scale_up(np.random.randn(N)))
-        wavfile.write("white.wav", Fs, white_noise.astype(np.int16))
+        wavfile.write("test/white.wav", Fs, white_noise.astype(np.int16))
         return Fs, white_noise
     elif name == "pink":
         plot = False
@@ -51,14 +51,14 @@ def get_signal(name):
         if plot:
             plt.plot(pink_noise)
             plt.show()
-        wavfile.write("pink.wav", Fs, pink_noise.astype(np.int16))
+        wavfile.write("test/pink.wav", Fs, pink_noise.astype(np.int16))
         return Fs, pink_noise
     elif name == "speech":
         wav_files = glob.glob('data/wavs/s1/*')
         x = np.zeros(N)
         Fs, x_raw = wavfile.read(wav_files[1])
         x[:len(x_raw)] = x_raw
-        wavfile.write("sample.wav", Fs, x.astype(np.int16))
+        wavfile.write("test/sample.wav", Fs, x.astype(np.int16))
         return Fs, x
     elif name == "harmonic":
         res = 2 ** 9 + 1
@@ -86,42 +86,6 @@ def get_transform(Fs, x, name="mine"):
             wc[i,:] = fft.ifft(wavelets[i,:] * Fx)
         wc = wc[:,range(0, N, subsample_factor)] # Subsample FIXME?
         return wc[:,:up_to]
-    elif name == "mine":
-        hop_length = 64
-        b = 12 # Filters per octave
-        Fmin = 80
-        Fmax = Fmin * 2 ** 4
-
-        K = int(ceil(b * log(Fmax/Fmin, 2))) # Number of cq bins
-        Q = (2 ** (1./b) - 1) ** (-1)
-
-
-        f = np.zeros(K+1)
-        N = np.zeros(K+1)
-        timepoints = int(ceil(x.shape[0] / hop_length))
-        cq = np.zeros((K+1, timepoints * 2), dtype=complex)
-        print "Fs=%f, Fmin=%f, Fmax=%f, K=%d, Q=%f" % (Fs, Fmin, Fmax, K, Q)
-        #print x.shape[0]
-
-        dummy_f = Fmin * 2 ** (1./b)
-        dummy_Nk = int(ceil(Q * Fs/dummy_f))
-        #x = np.lib.pad(x, (dummy_Nk, dummy_Nk), 'constant', constant_values=(0,0))
-        x = np.lib.pad(x, (dummy_Nk/4, dummy_Nk), 'constant', constant_values=(0,0))
-
-        t = 0
-        for s in range(0, x.shape[0] - dummy_Nk, hop_length):
-            for k in range(1,K+1):
-                f[k] = Fmin * 2 ** (float(k)/b)
-                N[k] = ceil(Q * Fs/f[k])
-                Nk = int(N[k])
-                ns = np.array(range(Nk))
-                #print Nk
-
-                e = np.exp(-2 * pi * 1j * (float(Q)/N[k]) * ns)
-                h = np.hamming(N[k]) * e
-                cq[k,t] = float(1)/Nk * np.dot(x[s:(s+Nk)], h)
-            t = t + 1
-        return cq
     elif name == "librosa":
         return librosa.core.cqt(x, sr=Fs, hop_length=64, real=False)
     else:

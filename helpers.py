@@ -10,8 +10,7 @@ def step(x):
 vstep = np.vectorize(step)
 
 def fourier_wavelet(w, w0, var):
-    #return 1. / (sqrt(2 * pi * var)) * np.exp(1./2 * (w - w0) ** 2 / var) * vstep(w)
-    return np.exp(-(w - w0) ** 2 / var) * vstep(w) # FIXME?
+    return np.exp(-(w - w0) ** 2 / var) * vstep(w) # FIXME Normalize?
 
 def ln(x):
     return log(x, math.e)
@@ -25,10 +24,6 @@ def gauss_mid(mean, var):
 def var_for_bw(freq):
     const = 2 ** (1./6) - 1
     return (2 * (freq * const) ** 2) / ln(2)
-    #return ((1./12) * freq) ** 2 / ln(2)
-    #freq_factor = (freq * (2 ** (1./6) - 1)) ** 2
-    #sq = math.sqrt(1./2)
-    #return - 1./(freq_factor * ln(sq))
 
 def compute_wavelets(freqs, plot=False):
     fmin = 2 ** 6
