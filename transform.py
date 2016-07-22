@@ -102,11 +102,7 @@ def get_signal(name):
 def get_transform(Fs, x, name="mine"):
     if name == "wavelet":
         subsample_factor = 1
-        #start, end = 500, 1500 # For harmonic
-        #start, end = 2000, 4000 # For harmonic2
         start, end = 2000, 3000 # For harmonic2
-        #start, end = 3000, 4000 # speech?
-        #start, end = 1000, 3000
 
         N = len(x)
         Fx = fft.fft(x)
@@ -178,56 +174,6 @@ def analysis2(mag, phase, thresh):
     plt.legend()
     plt.show()
 
-
-def analysis(mag, phase):
-    t = 0
-    colors = ["red", "orange", "green", "blue", "purple", "black"]
-    #for t in range(1):
-    #for (i,j) in ((19,31), (19, 36), (19,43), (19, 60)): # For Harmonic input
-    #for (i,j) in ((13,24), (13,31), (13,35), (13,18)): # For speech
-    #for (i,j) in ((14,38),(14,53),(14,62),(14,70)): # For harmonic 2
-    #for (i,j) in ((15,39),(15,53),(15,62),(15,70)): # For harmonic 2
-    #for (i,j) in ((25,49), (26,50), (26, 34), (26, 62), (26, 73), (26, 81)): # For speech2
-    #for (i,j) in ((25,49), (25,62)): # For speech 2
-    for (i,j) in ((42,66), (42,80), (42,90)): # For speech 2
-        #i = np.random.randint(phase.shape[0])
-        #j = np.random.randint(phase.shape[0])
-        plt.plot([-pi, pi], [0, 0], color='k')
-        plt.plot([0, 0], [-pi, pi], color='k')
-        plt.scatter(phase[i,:], phase[j,:], s=2, color=colors[t], label=("%d" % j))
-        #plt.xlabel("O_%d" % i)
-        #plt.ylabel("O_%d" % j)
-        #plt.axis([-pi, pi, -pi, pi])
-        #plt.show()
-        t = t + 1
-
-    close_test = False
-    if close_test:
-        for t in range(phase.shape[1]):
-            #if all_close(phase[[15,39, 53, 62, 70],t]):
-            if all_close(phase[[49,62], t]):
-                print "Found phase alignment", t
-
-    plt.axis('equal')
-    plt.legend()
-    plt.show()
-
-#plt.subplot(323)
-#plt.title("Phase Diff")
-#angle_diff = np.copy(angle)
-#for k in range(angle.shape[0]):
-    #for i in range(angle.shape[1] - 1):
-        #t1 = angle[k, i]
-        #t2 = angle[k, i+1]
-        #if t2 < t1:
-            #t2 = t2 + 2*math.pi
-        #angle_diff[k, i] = t2 - t1
-    #kmean = np.mean(angle_diff[k,5:-5])
-    #if k in (25,55):
-        #plt.plot(angle_diff[k,5:-5], label=('K=%d' % k))
-    #angle_diff[k,:] = (angle_diff[k,:] - kmean) / kmean
-#plt.legend()
-
 Fs, x = get_signal(opt.signal_type)
 wc = get_transform(Fs, x, opt.transform_type)
 
@@ -237,8 +183,6 @@ thresh = np.mean(mag) + 0.1 * np.std(mag)
 
 thresh_angle = np.copy(angle)
 thresh_angle[mag < thresh] = math.pi / 3
-#thresh_angle_diff = np.copy(angle_diff)
-#thresh_angle_diff[mag < thresh] = -5.0
 
 def subplot(cmd, title, data, hsv=True):
     ax = plt.subplot(cmd)
@@ -259,7 +203,6 @@ plt.title("Input Signal (%s)" % opt.signal_type)
 plt.plot(x)
 
 subplot(312, "Wavegram", mag, hsv=False)
-#subplot(313, "Phase (Thresholded)", angle) # TODO Overlay
 subplot(313, "Phase (Thresholded)", thresh_angle) # TODO Overlay
 #subplot(313, "Phase", angle)
 
