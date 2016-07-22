@@ -1,16 +1,16 @@
 import pdb
+import sys
 import numpy as np
 from numpy import fft
 from scipy.io import wavfile
+from scipy.signal import resample
 import glob
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import librosa
 import math
-from math import log, ceil, pi
+from math import log, ceil, pi, floor
 from helpers import *
 from optparse import OptionParser
-
 
 parser = OptionParser()
 parser.add_option("-s", "--signal", dest="signal_type", default="speech",
@@ -27,6 +27,19 @@ def get_signal(name):
     def scale_up(x):
         biggest = np.max(np.abs(x))
         return x * (top/biggest)
+
+    def get_start(x):
+        for t in range(len(x)):
+            if np.abs(x[t]) > 2000:
+                return max(0, t)
+        raise Exception("Signal not present?")
+
+    def construct_signal(x_raw):
+        x = np.zeros(N)
+        start = get_start(x_raw)
+        fill_length = min(N, len(x_raw[start:]))
+        x[:fill_length] = x_raw[start:start+fill_length]
+        return x
 
     if name == "white":
         white_noise = np.floor(scale_up(np.random.randn(N)))
@@ -56,25 +69,44 @@ def get_signal(name):
     elif name == "speech":
         wav_files = glob.glob('data/wavs/s1/*')
         x = np.zeros(N)
-        Fs, x_raw = wavfile.read(wav_files[1])
-        x[:len(x_raw)] = x_raw
+        wfile = np.random.choice(wav_files)
+        print "Using WAV %s" % wfile
+        Fs, x_raw = wavfile.read(wfile)
+        x = construct_signal(x_raw)
         wavfile.write("test/sample.wav", Fs, x.astype(np.int16))
         return Fs, x
     elif name == "harmonic":
-        res = 2 ** 9 + 1
-        nperiods = ceil(N/res)
+        period = 2 ** 8
+        nperiods = ceil(float(N)/period)
         x = np.zeros(N)
-        #for i in range(1,4+1):
-        for i in (1,2,4,8,16):
-            x += np.tile(np.sin(np.linspace(-i*np.pi, i*np.pi, (res+1))), nperiods)[:N]
+        #offset = np.random.random() * 2 * np.pi + 1
+        offset = 0
+        #for i in (1,2,4,8,16):
+        for i in range(1,5+1):
+            #x += np.tile(np.sin(np.linspace(-i*np.pi, i*np.pi, (period+1))), nperiods)[:N]
+            #offset = np.random.randint(3) * np.pi/2
+            x += np.tile(np.sin(np.linspace(-i*np.pi - offset, i*np.pi - (2*i*pi/period) - offset, period)), nperiods)[:N]
         return Fs, x
     else:
-        raise Exception("Unknown signal type")
+        try:
+            Fs, x_raw = wavfile.read('data/mine/%s.wav' % name)
+        except Exception as e:
+            print "ERROR: Signal file not found"
+            sys.exit(0)
+        if len(x_raw.shape) > 1:
+            x_raw = x_raw[:,0] # remove 2nd channel
+
+        x = construct_signal(x_raw)
+        return Fs, x
 
 def get_transform(Fs, x, name="mine"):
     if name == "wavelet":
         subsample_factor = 1
-        up_to = 1000
+        #start, end = 500, 1500 # For harmonic
+        #start, end = 2000, 4000 # For harmonic2
+        start, end = 2000, 3000 # For harmonic2
+        #start, end = 3000, 4000 # speech?
+        #start, end = 1000, 3000
 
         N = len(x)
         Fx = fft.fft(x)
@@ -85,14 +117,101 @@ def get_transform(Fs, x, name="mine"):
         for i in range(wavelets.shape[0]):
             wc[i,:] = fft.ifft(wavelets[i,:] * Fx)
         wc = wc[:,range(0, N, subsample_factor)] # Subsample FIXME?
-        return wc[:,:up_to]
+        return wc[:,start:end]
     elif name == "librosa":
+        import librosa
         return librosa.core.cqt(x, sr=Fs, hop_length=64, real=False)
     else:
         raise Exception("Unknown cqt type")
 
+def mag_angle(wc):
+    return np.absolute(wc), np.angle(wc)
+
 def get_angle_diff():
     raise NotImplementedError
+
+def all_close(x):
+    for i in range(1,x.shape[0]):
+        if not np.allclose(x[0], x[1], atol=1e-1):
+            return False
+    return True
+
+def analysis2(mag, phase, thresh):
+    def get_search_points(mag, thresh):
+        points = []
+        band_length = 0
+        band_thresh = 1
+
+        start = 0
+        #fund_k = np.where(mag[:,0] == np.max(mag[:,0]))[0][0]
+        #points.append(fund_k)
+        #for start in range(fund_k, mag.shape[0]):
+            #if mag[start,0] < thresh:
+                #break
+
+        for k in range(start, mag.shape[0]):
+            if mag[k,0] > thresh:
+                band_length = band_length + 1
+            if mag[k,0] <= thresh:
+                if band_length >= band_thresh:
+                    points.append(k - band_length/2)
+                band_length = 0
+        print points
+        return points
+
+
+    points = get_search_points(mag, thresh)
+
+    plt.figure(2)
+    colors = ["red", "orange", "green", "blue", "purple", "black"]
+    #stop = min(len(colors), len(points))
+    stop = min(len(points), 4)
+    for k in range(1, stop):
+        i, j = points[0], points[k]
+        plt.plot([-pi, pi], [0, 0], color='k')
+        plt.plot([0, 0], [-pi, pi], color='k')
+        plt.scatter(phase[i,:], phase[j,:], s=2, color=colors[k-1], label=("%d" % j))
+        #plt.scatter(phase[i,:], phase[j,:], s=2, label=("%d" % j))
+
+    plt.title('Phase Correlation (Fund=%d)' % points[0])
+    plt.axis('equal')
+    plt.legend()
+    plt.show()
+
+
+def analysis(mag, phase):
+    t = 0
+    colors = ["red", "orange", "green", "blue", "purple", "black"]
+    #for t in range(1):
+    #for (i,j) in ((19,31), (19, 36), (19,43), (19, 60)): # For Harmonic input
+    #for (i,j) in ((13,24), (13,31), (13,35), (13,18)): # For speech
+    #for (i,j) in ((14,38),(14,53),(14,62),(14,70)): # For harmonic 2
+    #for (i,j) in ((15,39),(15,53),(15,62),(15,70)): # For harmonic 2
+    #for (i,j) in ((25,49), (26,50), (26, 34), (26, 62), (26, 73), (26, 81)): # For speech2
+    #for (i,j) in ((25,49), (25,62)): # For speech 2
+    for (i,j) in ((42,66), (42,80), (42,90)): # For speech 2
+        #i = np.random.randint(phase.shape[0])
+        #j = np.random.randint(phase.shape[0])
+        plt.plot([-pi, pi], [0, 0], color='k')
+        plt.plot([0, 0], [-pi, pi], color='k')
+        plt.scatter(phase[i,:], phase[j,:], s=2, color=colors[t], label=("%d" % j))
+        #plt.xlabel("O_%d" % i)
+        #plt.ylabel("O_%d" % j)
+        #plt.axis([-pi, pi, -pi, pi])
+        #plt.show()
+        t = t + 1
+
+    close_test = False
+    if close_test:
+        for t in range(phase.shape[1]):
+            #if all_close(phase[[15,39, 53, 62, 70],t]):
+            if all_close(phase[[49,62], t]):
+                print "Found phase alignment", t
+
+    plt.axis('equal')
+    plt.legend()
+    plt.show()
+
 #plt.subplot(323)
 #plt.title("Phase Diff")
 #angle_diff = np.copy(angle)
@@ -112,10 +231,9 @@ def get_angle_diff():
 Fs, x = get_signal(opt.signal_type)
 wc = get_transform(Fs, x, opt.transform_type)
 
-mag, phase = librosa.core.magphase(wc)
-angle = np.angle(phase)
+mag, angle = mag_angle(wc)
 
-thresh = np.mean(mag) - 0.0 * (1./2) * np.std(mag)
+thresh = np.mean(mag) + 0.1 * np.std(mag)
 
 thresh_angle = np.copy(angle)
 thresh_angle[mag < thresh] = math.pi / 3
@@ -135,12 +253,16 @@ def subplot(cmd, title, data, hsv=True):
     plt.colorbar(im, cax=cax)
 
 
+plt.figure(1)
 plt.subplot(311)
-plt.title("Input Signal")
+plt.title("Input Signal (%s)" % opt.signal_type)
 plt.plot(x)
 
 subplot(312, "Wavegram", mag, hsv=False)
-#subplot(313, "Phase (Thresholded)", thresh_angle)
-subplot(313, "Phase", angle)
+#subplot(313, "Phase (Thresholded)", angle) # TODO Overlay
+subplot(313, "Phase (Thresholded)", thresh_angle) # TODO Overlay
+#subplot(313, "Phase", angle)
 
-plt.show()
+plt.show(block=False)
+
+analysis2(mag, angle, thresh)

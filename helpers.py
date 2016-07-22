@@ -22,13 +22,14 @@ def gauss_mid(mean, var):
     return math.sqrt(var * ln(2)) + mean
 
 def var_for_bw(freq):
-    const = 2 ** (1./6) - 1
+    bw = 1./12 # In harmonic units
+    const = 2 ** (bw * 1./2) - 1
     return (2 * (freq * const) ** 2) / ln(2)
 
 def compute_wavelets(freqs, plot=False):
     fmin = 2 ** 6
-    noctaves = 7
-    nwavelets_per_octave = 12
+    noctaves = 5
+    nwavelets_per_octave = 24
     nwavelets = noctaves * nwavelets_per_octave
     wavelets = np.zeros((nwavelets, len(freqs)))
 
