@@ -18,6 +18,9 @@ def ln(x):
 def log2(x):
     return log(x, 2)
 
+def mag_angle(wc):
+    return np.absolute(wc), np.angle(wc)
+
 def gauss_mid(mean, var):
     return math.sqrt(var * ln(2)) + mean
 
@@ -26,23 +29,4 @@ def var_for_bw(freq):
     const = 2 ** (bw * 1./2) - 1
     return (2 * (freq * const) ** 2) / ln(2)
 
-def compute_wavelets(freqs, plot=False):
-    fmin = 2 ** 6
-    noctaves = 5
-    nwavelets_per_octave = 24
-    nwavelets = noctaves * nwavelets_per_octave
-    wavelets = np.zeros((nwavelets, len(freqs)))
 
-    for i in range(nwavelets_per_octave * noctaves):
-        w0 = fmin * 2 ** (float(i)/nwavelets_per_octave)
-        var = var_for_bw(w0)
-        wavelets[i,:] = (fourier_wavelet(freqs, w0, var)) ** 2
-        if plot:
-            plt.plot(freqs, wavelets[i,:], label=("%d" % i))
-    if plot:
-        sfreq = fft.fftshift(freqs)
-        plt.axis([sfreq[0], sfreq[-1],  0, 1.5])
-        plt.legend()
-        plt.show()
-
-    return wavelets
