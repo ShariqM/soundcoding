@@ -84,7 +84,6 @@ def phase_diff(mag, angle, thresh):
     a, b, r_value, c, std_err = stats.linregress(x,y)
     print 'i:%d, j:%d, r-squared: %f' % (i,j,r_value ** 2)
     plt.scatter(total_angle[i,:], total_angle[j,:])
-    plt.show()
     return
 
     alpha = np.mean(angle_diffs[j])/np.mean(angle_diffs[i])
@@ -125,20 +124,28 @@ def subplot(cmd, title, data, hsv=True):
     cax = divider.append_axes("right", size="5%", pad=0.05)
     plt.colorbar(im, cax=cax)
 
+def prepare_figure(fig_num):
+    plt.figure(fig_num)
+    return fig_num + 1
 
-plt.figure(1)
-plt.subplot(311)
+
+fig_num =  1
+fig_num = prepare_figure(fig_num)
+plt.subplot(111)
 plt.title("Input Signal (%s)" % opt.signal_type)
 plt.plot(x)
 
-subplot(312, "Wavegram", mag, hsv=False)
-subplot(313, "Phase (Thresholded)", thresh_angle) # TODO Overlay
+fig_num = prepare_figure(fig_num)
+subplot(111, "Wavegram", mag, hsv=False)
+
+fig_num = prepare_figure(fig_num)
+subplot(111, "Phase (Thresholded)", thresh_angle) # TODO Overlay
 #subplot(313, "Phase", angle)
 
-plt.show(block=False)
-
-plt.figure(2)
+fig_num = prepare_figure(fig_num)
 phase_diff(mag, angle, thresh)
 
-plt.figure(3)
+fig_num = prepare_figure(fig_num)
 analysis(mag, angle, thresh)
+
+plt.show()
