@@ -16,14 +16,14 @@ parser.add_option("-s", "--signal", dest="signal_type", default="speech",
                   help="(speech, white, pink, harmonic)")
 (opt, args) = parser.parse_args()
 
-def get_search_points(mag, thresh):
-    points = []
+def get_interesting_filters(mag, thresh):
+    filter_points = []
     band_length = 0
     band_thresh = 1
 
     start = 0
     #fund_k = np.where(mag[:,0] == np.max(mag[:,0]))[0][0]
-    #points.append(fund_k)
+    #filter_points.append(fund_k)
     #for start in range(fund_k, mag.shape[0]):
         #if mag[start,0] < thresh:
             #break
@@ -35,28 +35,26 @@ def get_search_points(mag, thresh):
             if band_length >= band_thresh:
                 section = mag[k-band_length:k,0]
                 biggest_k = (k-band_length) + np.where(section == np.max(section))[0][0]
-                points.append(biggest_k)
-                #points.append(k - band_length/2)
+                filter_points.append(biggest_k)
+                #filter_points.append(k - band_length/2)
             band_length = 0
-    print points
-    return points
-
+    print "Filters of interest:", filter_points
+    return filter_points
 
 def analysis(mag, angle, thresh):
-    points = get_search_points(mag, thresh)
+    filter_points = get_interesting_filters(mag, thresh)
 
-    plt.figure(2)
     colors = ["red", "orange", "green", "blue", "purple", "black"]
-    #stop = min(len(colors), len(points))
-    stop = min(len(points), 4)
+    #stop = min(len(colors), len(filter_points))
+    stop = min(len(filter_points), 4)
     for k in range(1, stop):
-        i, j = points[0], points[k]
+        i, j = filter_points[0], filter_points[k]
         plt.plot([-pi, pi], [0, 0], color='k')
         plt.plot([0, 0], [-pi, pi], color='k')
         plt.scatter(angle[i,:], angle[j,:], s=2, color=colors[k-1], label=("%d" % j))
         #plt.scatter(phase[i,:], phase[j,:], s=2, label=("%d" % j))
 
-    plt.title('Phase Correlation (Fund=%d)' % points[0])
+    plt.title('Phase Correlation (Fund=%d)' % filter_points[0])
     plt.axis('equal')
     plt.legend()
     plt.show()
@@ -77,8 +75,8 @@ def phase_diff(mag, angle, thresh):
                 total_angle[k,i] = a
         #print np.mean(angle_diffs[k]), np.std(angle_diffs[k])
 
-    points = get_search_points(mag, thresh)
-    i,j = points[6], points[9]
+    filter_points = get_interesting_filters(mag, thresh)
+    i,j = filter_points[0], filter_points[1]
 
     #i,j = 13, 37
     #i,j = 29, 53
@@ -87,6 +85,8 @@ def phase_diff(mag, angle, thresh):
     print 'i:%d, j:%d, r-squared: %f' % (i,j,r_value ** 2)
     plt.scatter(total_angle[i,:], total_angle[j,:])
     plt.show()
+    return
+
     alpha = np.mean(angle_diffs[j])/np.mean(angle_diffs[i])
     #angle_pred = alpha * angle[i,0]
     #if angle_pred > pi:
@@ -113,15 +113,13 @@ thresh = np.mean(mag) + 0.1 * np.std(mag)
 thresh_angle = np.copy(angle)
 thresh_angle[mag < thresh] = math.pi / 3
 
-phase_diff(mag, angle, thresh)
-
 def subplot(cmd, title, data, hsv=True):
     ax = plt.subplot(cmd)
     plt.title(title)
     if hsv:
-        im = plt.imshow(data, cmap=plt.get_cmap('hsv'), interpolation='none')
+        im = plt.imshow(data, cmap=plt.get_cmap('hsv'))
     else:
-        im = plt.imshow(data, interpolation='none')
+        im = plt.imshow(data)
     plt.gca().invert_yaxis()
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.05)
@@ -139,4 +137,8 @@ subplot(313, "Phase (Thresholded)", thresh_angle) # TODO Overlay
 
 plt.show(block=False)
 
+plt.figure(2)
+phase_diff(mag, angle, thresh)
+
+plt.figure(3)
 analysis(mag, angle, thresh)

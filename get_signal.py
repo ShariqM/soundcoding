@@ -37,8 +37,11 @@ def get_signal(name):
         F_white_noise = fft.fft(white_noise)
 
         freqs = fft.fftfreq(N, 1./Fs)
-        freq_filter = 1./np.sqrt(np.abs(freqs))
-        freq_filter[0] = 2 # Remove NaN
+
+        freqs_sub = np.copy(freqs)
+        freqs_sub[0] = 0.25
+        freq_filter = 1./np.sqrt(np.abs(freqs_sub))
+
         if plot:
             plt.plot(freqs, freq_filter)
             plt.show()
