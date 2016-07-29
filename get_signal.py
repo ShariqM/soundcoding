@@ -15,8 +15,8 @@ def get_signal(name):
     def get_start(x):
         largest = np.max(np.abs(x))
         for t in range(len(x)):
-            if np.abs(x[t]) > 0.1 * largest:
-                return max(0, t - 100)
+            if np.abs(x[t]) > 0.3 * largest:
+                return max(0, t - 500)
         raise Exception("Signal not present?")
 
     def construct_signal(x_raw):
@@ -79,12 +79,13 @@ def get_signal(name):
         try:
             Fs, x_raw = wavfile.read('data/mine/%s.wav' % name)
         except Exception as e:
-            print "ERROR: Signal file not found"
-            sys.exit(0)
+            try:
+                Fs, x_raw = wavfile.read('data/wavs/s1_50kHz/%s.wav' % name)
+            except Exception as e:
+                print "ERROR: Signal file not found"
+                sys.exit(0)
         if len(x_raw.shape) > 1:
             x_raw = x_raw[:,0] # remove 2nd channel
 
         x = construct_signal(x_raw)
         return Fs, x
-
-

@@ -37,9 +37,9 @@ def compute_wavelets(freqs, plot=False):
     return wavelets
 
 def get_transform(Fs, x):
-    subsample_factor = 2 ** 5
+    subsample_factor = 2 ** 0
     #start, end = 2000, 3000 # For harmonic2
-    start, end = 0000, 32000 # For harmonic2
+    start, end = 0000, 8000 # For harmonic2
 
     N = len(x)
     Fx = fft.fft(x)
