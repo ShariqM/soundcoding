@@ -28,7 +28,6 @@ def get_interesting_filters(mag, thresh):
 
     start = 0
     mid = mag.shape[1]/2
-    print 'Mid, ', mid
     for k in range(start, mag.shape[0]):
         if mag[k,mid] > thresh:
             band_length = band_length + 1
@@ -42,32 +41,6 @@ def get_interesting_filters(mag, thresh):
     top = sorted(zip(mag[candidate_points,mid], candidate_points))[-3:]
     print 'Magnitudes:', mag[candidate_points, mid]
     filter_points = sorted(zip(*top)[1])
-    print "Filters of interest:", filter_points
-    return filter_points
-
-def get_interesting_filters_old(mag, thresh):
-    filter_points = []
-    band_length = 0
-    band_thresh = 1
-
-    start = 0
-    #fund_k = np.where(mag[:,0] == np.max(mag[:,0]))[0][0]
-    #filter_points.append(fund_k)
-    #for start in range(fund_k, mag.shape[0]):
-        #if mag[start,0] < thresh:
-            #break
-
-    mid = mag.shape[1]/2
-    for k in range(start, mag.shape[0]):
-        if mag[k,mid] > thresh:
-            band_length = band_length + 1
-        if mag[k,mid] <= thresh:
-            if band_length >= band_thresh:
-                section = mag[k-band_length:k,0]
-                biggest_k = (k-band_length) + np.where(section == np.max(section))[0][0]
-                filter_points.append(biggest_k)
-                #filter_points.append(k - band_length/2)
-            band_length = 0
     print "Filters of interest:", filter_points
     return filter_points
 
@@ -106,7 +79,6 @@ def phase_diff(mag, angle, thresh):
         #print np.mean(angle_diffs[k]), np.std(angle_diffs[k])
 
     filter_points = get_interesting_filters(mag, thresh)
-    #filter_points = [26, 50, 74]
 
     look_corr = True
     if look_corr:
@@ -179,18 +151,14 @@ def subplot(cmd, title, data, hsv=True):
     ax.set_aspect('auto') # Fill y-axis
     #plt.colorbar(im, cax=cax)
 
-def prepare_figure(fig_num):
-    plt.figure(fig_num)
-    return fig_num + 1
-
-fig_num =  1
-fig_num = prepare_figure(fig_num)
+plt.figure()
 plt.subplot(111)
 plt.title("Input Signal (%s)" % opt.signal_type)
 plt.plot(x)
 
-fig_num = prepare_figure(fig_num)
+plt.figure()
 subplot(111, "Wavegram", mag, hsv=False)
+plt.show()
 
 fig_num = prepare_figure(fig_num)
 #subplot(111, "Phase (Thresholded)", thresh_angle) # TODO Overlay
