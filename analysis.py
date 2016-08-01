@@ -15,9 +15,37 @@ from transform import *
 parser = OptionParser()
 parser.add_option("-s", "--signal", dest="signal_type", default="speech",
                   help="(speech, white, pink, harmonic)")
+parser.add_option("-f", "--subsample_power", dest="subsample_power", default=0,
+                  help="Subsample by 2 ** (arg)")
+parser.add_option("-l", "--length", dest="time_length", default=8000,
+                  help="Number of timepoints to look at")
 (opt, args) = parser.parse_args()
 
 def get_interesting_filters(mag, thresh):
+    candidate_points = []
+    band_length = 0
+    band_thresh = 1
+
+    start = 0
+    mid = mag.shape[1]/2
+    print 'Mid, ', mid
+    for k in range(start, mag.shape[0]):
+        if mag[k,mid] > thresh:
+            band_length = band_length + 1
+        if mag[k,mid] <= thresh:
+            if band_length >= band_thresh:
+                section = mag[k-band_length:k,mid]
+                biggest_k = (k-band_length) + np.where(section == np.max(section))[0][0]
+                candidate_points.append(biggest_k)
+            band_length = 0
+
+    top = sorted(zip(mag[candidate_points,mid], candidate_points))[-3:]
+    print 'Magnitudes:', mag[candidate_points, mid]
+    filter_points = sorted(zip(*top)[1])
+    print "Filters of interest:", filter_points
+    return filter_points
+
+def get_interesting_filters_old(mag, thresh):
     filter_points = []
     band_length = 0
     band_thresh = 1
@@ -129,7 +157,7 @@ def phase_diff(mag, angle, thresh):
     plt.show()
 
 Fs, x = get_signal(opt.signal_type)
-wc = get_transform(Fs, x)
+wc = get_transform(Fs, x, opt.time_length, opt.subsample_power)
 
 mag, angle = mag_angle(wc)
 
@@ -142,9 +170,9 @@ def subplot(cmd, title, data, hsv=True):
     ax = plt.subplot(cmd)
     plt.title(title)
     if hsv:
-        im = plt.imshow(data, cmap=plt.get_cmap('hsv'), interpolation="none")
+        im = plt.imshow(data, cmap=plt.get_cmap('hsv'), interpolation="nearest")
     else:
-        im = plt.imshow(data)
+        im = plt.imshow(data, interpolation="nearest")
     plt.gca().invert_yaxis()
     #divider = make_axes_locatable(ax)
     #cax = divider.append_axes("right", size="5%", pad=0.05)
@@ -167,11 +195,12 @@ subplot(111, "Wavegram", mag, hsv=False)
 fig_num = prepare_figure(fig_num)
 #subplot(111, "Phase (Thresholded)", thresh_angle) # TODO Overlay
 subplot(111, "Phase", angle)
+
 a = np.arange(0, mag.shape[1])
 b = np.arange(0, mag.shape[0])
 A,B = np.meshgrid(a,b)
-plt.contour(A, B, mag, colors='k', levels=[thresh])
-plt.show()
+contour_thresh = np.mean(mag) + np.std(mag)
+plt.contour(A, B, mag, colors='k', levels=[contour_thresh], linewidths=5)
 
 fig_num = prepare_figure(fig_num)
 phase_diff(mag, angle, thresh)

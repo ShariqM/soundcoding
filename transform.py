@@ -36,10 +36,10 @@ def compute_wavelets(freqs, plot=False):
 
     return wavelets
 
-def get_transform(Fs, x):
-    subsample_factor = 2 ** 0
+def get_transform(Fs, x, time_length, subsample_power):
+    subsample_factor = 2 ** subsample_power
     #start, end = 2000, 3000 # For harmonic2
-    start, end = 0000, 8000 # For harmonic2
+    start, end = 0, time_length # For harmonic2
 
     N = len(x)
     Fx = fft.fft(x)

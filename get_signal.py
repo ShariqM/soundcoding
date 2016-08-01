@@ -16,7 +16,7 @@ def get_signal(name):
         largest = np.max(np.abs(x))
         for t in range(len(x)):
             if np.abs(x[t]) > 0.3 * largest:
-                return max(0, t - 500)
+                return max(0, t - 1000)
         raise Exception("Signal not present?")
 
     def construct_signal(x_raw):
