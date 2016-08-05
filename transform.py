@@ -98,7 +98,7 @@ def itransform(wc, Fs, opt):
         Fx_recon += Filx * wavelets[i,:]
 
     x_recon = np.real(fft.ifft(Fx_recon)) # XXX Real OK?
-    scale_factor = 30000/np.max(x_recon)
+    scale_factor = 22000/np.max(x_recon)
     print '\tScaling Reconstruction by %.2f' % scale_factor
     x_recon *= scale_factor
     return x_recon

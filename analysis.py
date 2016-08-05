@@ -7,26 +7,12 @@ import matplotlib.cm as cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import math
 from math import log, ceil, pi, floor
-from optparse import OptionParser
 from scipy import stats
 from gen_signal import *
 from transform import *
+from common import *
 
-parser = OptionParser()
-parser.add_option("-s", "--signal", dest="signal_type", default="speech",
-                  help="(speech, white, pink, harmonic)")
-parser.add_option("-p", "--subsample_power", type="int", dest="subsample_power",
-                  default=0, help="Subsample by 2 ** (arg)")
-parser.add_option("-l", "--length", type="int", dest="time_length", default=8000,
-                  help="Number of timepoints to look at")
-parser.add_option("-f", "--filters_per_octave", type="int",
-                  dest="nfilters_per_octave", default=12,
-                  help="Number of filters per octave")
-parser.add_option("-b", "--bandwidth", type="float", dest="bandwidth",
-                  default=4, help="Bandwidth of the filter will be 1/bw * octave")
-parser.add_option("-w", "--wavelet_type", dest="wavelet_type",
-                  default="gaussian", help="Type of wavelet (gaussian, sinusoid)")
-(opt, args) = parser.parse_args()
+opt = options()
 
 def get_interesting_filters(mag, thresh):
     candidate_points = []
@@ -72,33 +58,20 @@ def analysis(mag, angle, thresh):
     plt.show()
 
 def phase_diff(mag, angle, thresh):
-    angle_diffs = np.zeros((angle.shape[0], angle.shape[1] - 1))
-    total_angle = np.zeros((angle.shape[0], angle.shape[1] - 1))
-    for k in range(angle.shape[0]):
-        for i in range(angle.shape[1] - 1):
-            a = angle[k,i]
-            b = angle[k,i+1]
-            if b < a:
-                b = b + 2*pi
-            angle_diffs[k,i] = (b - a)
-            if i > 0:
-                total_angle[k,i] = total_angle[k,i-1] + (b-a)
-            else:
-                total_angle[k,i] = a
-
+    angle_diff, angle_total = angle_data(angle)
 
     filter_points = get_interesting_filters(mag, thresh)
 
     i,j = filter_points[0], filter_points[1]
 
     plt.figure()
-    plt.plot(total_angle[i,:], total_angle[j,:])
+    plt.plot(angle_total[i,:], angle_total[j,:])
     plt.title("Total Angle")
     plt.xlabel("Filter %d" % i)
     plt.ylabel("Filter %d" % j)
 
     subsample = 2 ** 2
-    x,y = angle_diffs[i,:], angle_diffs[j,:]
+    x,y = angle_diff[i,:], angle_diff[j,:]
     x,y = x - np.mean(x), y - np.mean(y)
     x   = x[range(0, len(x), subsample)]
     y   = y[range(0, len(y), subsample)]
