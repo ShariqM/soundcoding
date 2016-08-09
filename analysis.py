@@ -93,7 +93,7 @@ def phase_diff(mag, angle, thresh):
     plt.ylabel("Filter %d" % j)
     plt.legend()
 
-Fs, x = gen_signal(opt.signal_type)
+Fs, x = gen_signal(opt)
 wc = transform(Fs, x, opt)
 
 mag, angle = mag_angle(wc)
@@ -103,30 +103,15 @@ thresh = np.mean(mag) + 0.1 * np.std(mag)
 thresh_angle = np.copy(angle)
 thresh_angle[mag < thresh] = math.pi / 3
 
-def subplot(cmd, title, data, hsv=True):
-    plt.figure()
-    ax = plt.subplot(cmd)
-    plt.title(title)
-    if hsv:
-        im = plt.imshow(data, cmap=plt.get_cmap('hsv'), interpolation="nearest")
-    else:
-        im = plt.imshow(data, interpolation="nearest")
-    plt.gca().invert_yaxis()
-    #divider = make_axes_locatable(ax)
-    #cax = divider.append_axes("right", size="5%", pad=0.05)
-    ax.set_aspect('auto') # Fill y-axis
-    #plt.colorbar(im, cax=cax)
-
 plt.figure()
-plt.subplot(111)
 plt.title("Input Signal (%s)" % opt.signal_type)
 plt.plot(x)
 plt.show()
 
-subplot(111, "Wavegram", mag, hsv=False)
+imshow("Wavegram", mag, hsv=False)
 
-#subplot(111, "Phase (Thresholded)", thresh_angle) # TODO Overlay
-subplot(111, "Phase", angle)
+#imshow(111, "Phase (Thresholded)", thresh_angle) # TODO Overlay
+imshow("Phase", angle)
 a = np.arange(0, mag.shape[1])
 b = np.arange(0, mag.shape[0])
 A,B = np.meshgrid(a,b)

@@ -1,5 +1,7 @@
+import matplotlib.pyplot as plt
 from optparse import OptionParser
 import numpy as np
+from numpy import fft
 from math import pi
 
 def options():
@@ -20,8 +22,16 @@ def options():
                       default=4, help="Bandwidth of the filter will be 1/bw * octave")
 
     parser.add_option("-w", "--wavelet_type", dest="wavelet_type",
-                      default="gaussian", help="Type of wavelet (gaussian, sinusoid)")
+                      default="sinusoid", help="Type of wavelet (gaussian, sinusoid)")
+
+    parser.add_option("-N", "--transform_length", type="int", dest="N",
+                      default=2 ** 16)
+
+    parser.add_option("-T", "--plot_total", action='store_true', dest="plot_total",
+                      default=False)
+
     (opt, args) = parser.parse_args()
+    opt.MAX_AMP = 22000
 
     return opt
 
@@ -40,5 +50,44 @@ def angle_data(angle):
             else:
                 angle_total[k,i] = a
     return angle_diff, angle_total
+
+def plot_fourier(freqs, Fx, w):
+    plt.figure()
+    plt.title("Fourier Signal")
+
+    sfreqs = fft.fftshift(freqs)[2**15 - w:2**15 + w+1]
+    sFx    = fft.fftshift(Fx)[2**15 - w:2**15 + w+1]
+
+    plt.plot(sfreqs, np.real(sFx), label="Real")
+    plt.plot(sfreqs, np.imag(sFx), color='g', label="Imag")
+    plt.plot(sfreqs, np.absolute(sFx), color='r', label="Absolute")
+
+    # Handle Axis
+    plt.plot([-w, w], [0, 0], color='k')
+    top = 1.01 * np.max(np.real(sFx))
+    plt.plot([0, 0], [-top, top], color='k')
+
+    plt.legend()
+    plt.show()
+
+
+def plot(title, x, y=None):
+    plt.figure()
+    plt.title(title)
+    if y is not None:
+        plt.plot(x,y)
+    else:
+        plt.plot(x)
+
+def imshow(title, data, hsv=True):
+    plt.figure()
+    ax = plt.subplot()
+    plt.title(title)
+    if hsv:
+        im = plt.imshow(data, cmap=plt.get_cmap('hsv'), interpolation="nearest")
+    else:
+        im = plt.imshow(data, interpolation="nearest")
+    plt.gca().invert_yaxis()
+    ax.set_aspect('auto') # Fill y-axis
 
 

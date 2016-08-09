@@ -6,20 +6,19 @@ from scipy.io import wavfile
 from numpy import fft
 from math import ceil, pi
 
-def gen_signal(name):
-    N = 2 ** 16
+def gen_signal(opt):
+    name, N = opt.signal_type, opt.N
     Fs = 25000
-    top = 8000.
 
-    def scale_up(x):
-        biggest = np.max(np.abs(x))
-        return x * (top/biggest)
+    def scale_up(x): # FIXME Fuse this with construct signal
+        largest = np.max(np.abs(x))
+        return x * (opt.MAX_AMP/largest)
 
     def get_start(x):
         largest = np.max(np.abs(x))
         for t in range(len(x)):
             if np.abs(x[t]) > 0.5 * largest:
-                return max(0, t - 1000)
+                return max(0, t - 1000) ## FIXME Make this parse arg
                 #return max(0, t)
         raise Exception("Signal not present?")
 
@@ -30,6 +29,7 @@ def gen_signal(name):
         start = get_start(x_raw)
         fill_length = min(N, len(x_raw[start:]))
         x[:fill_length] = x_raw[start:start+fill_length]
+        x *= opt.MAX_AMP/np.max(np.abs(x))
         return x
 
     if name == "white":

@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.io import wavfile
 from helpers import *
 from math import acos, sqrt, pi
+from common import *
 import pdb
 
 def step(x):
@@ -27,7 +28,7 @@ def gaussian_var(freq, bandwidth):
 def sinusoid_var(freq, freq_prev):
     return 2 * (freq - freq_prev) / pi
 
-def compute_wavelets(freqs, opt, plot_total=False, plot=False):
+def compute_wavelets(freqs, opt, plot=False):
     fmin = 2 ** 6
     noctaves = 7
     nwavelets_per_octave = opt.nfilters_per_octave
@@ -62,7 +63,7 @@ def compute_wavelets(freqs, opt, plot_total=False, plot=False):
         plt.legend()
         plt.show()
 
-    if plot_total:
+    if opt.plot_total:
         plt.figure()
         plt.title("Total")
         top = fmin * 2 ** (noctaves+1)
@@ -71,14 +72,16 @@ def compute_wavelets(freqs, opt, plot_total=False, plot=False):
 
     return wavelets
 
-def transform(Fs, x, opt):
+def transform(Fs, x, opt, do_plot=False):
     subsample_factor = 2 ** opt.subsample_power
     start, end = 0, opt.time_length
 
     N = len(x)
     Fx = fft.fft(x)
     freqs = fft.fftfreq(N, 1./Fs)
-    wavelets = compute_wavelets(freqs, opt, plot_total=False, plot=False)
+    if do_plot:
+        plot_fourier(freqs, Fx, 100)
+    wavelets = compute_wavelets(freqs, opt, plot=False)
 
     wc = np.zeros((wavelets.shape[0], N), dtype=complex)
     for i in range(wavelets.shape[0]):
@@ -98,7 +101,7 @@ def itransform(wc, Fs, opt):
         Fx_recon += Filx * wavelets[i,:]
 
     x_recon = np.real(fft.ifft(Fx_recon)) # XXX Real OK?
-    scale_factor = 22000/np.max(x_recon)
+    scale_factor = opt.MAX_AMP/np.max(x_recon)
     print '\tScaling Reconstruction by %.2f' % scale_factor
     x_recon *= scale_factor
     return x_recon
