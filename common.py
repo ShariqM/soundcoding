@@ -19,7 +19,7 @@ def options():
                       default=12, help="Number of filters per octave")
 
     parser.add_option("-b", "--bandwidth", type="float", dest="bandwidth",
-                      default=4, help="Bandwidth of the filter will be 1/bw * octave")
+                      default=3, help="Bandwidth of the filter will be 1/bw * octave")
 
     parser.add_option("-w", "--wavelet_type", dest="wavelet_type",
                       default="sinusoid", help="Type of wavelet (gaussian, sinusoid)")

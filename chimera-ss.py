@@ -4,6 +4,7 @@ from gen_signal import *
 from transform import *
 from common import *
 
+#FIXME put in direc
 opt = options()
 
 Fs, x = gen_signal(opt)

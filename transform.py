@@ -22,7 +22,7 @@ def sinusoid_wavelet(w, w0, var):
 
 def gaussian_var(freq, bandwidth):
     bw = 1./bandwidth # In harmonic units
-    const = 2 ** (bw * 1./2) - 1
+    const = 2 ** (bw/2) - 1
     return ((freq * const) ** 2) / ln(2)
 
 def sinusoid_var(freq, freq_prev):

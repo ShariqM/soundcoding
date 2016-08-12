@@ -21,7 +21,7 @@ angle_diff, angle_total = angle_data(angle)
 
 imshow("Wavegram", mag[:,:8000], hsv=False)
 
-plot("Total Angle", angle_total[24,:])
+#plot("Total Angle", angle_total[24,:])
 
 for k in range(wc.shape[0]):
     avg_diff = np.mean(angle_diff[k,:])
@@ -37,11 +37,9 @@ t = 0
 for wc_curr in (wc, wc_pc, wc_ap):
     print 'Analyzing %s' % names[t]
     x_recon = itransform(wc_curr, Fs, opt)
-    plt.figure()
-    plt.title("Reconstruction %d" % t)
-    plt.plot(x_recon)
-    args = (opt.nfilters_per_octave, names[t])
-    wavfile.write("test/sa/recon_f=%d_%s.wav" % args, Fs, x_recon.astype(np.int16))
+    plot("Reconstruction %d" % t, x_recon)
+    args = (opt.wavelet_type, opt.nfilters_per_octave, names[t])
+    wavfile.write("test/sa/reconstruction_%s_f=%d_%s.wav" % args, Fs, x_recon.astype(np.int16))
     t = t + 1
 
-plt.show()
+#plt.show()
