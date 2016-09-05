@@ -31,11 +31,13 @@ def get_interesting_filters(mag, thresh):
                 candidate_points.append(biggest_k)
             band_length = 0
 
-    print candidate_points
+    print (candidate_points)
+
     top = sorted(zip(mag[candidate_points,mid], candidate_points))[-3:]
-    print 'Magnitudes:', mag[candidate_points, mid]
-    filter_points = sorted(zip(*top)[1])
-    print "Filters of interest:", filter_points
+    print ('Magnitudes:', mag[candidate_points, mid])
+    #filter_points = sorted(zip(*top)[1]) # Broke in python3
+    filter_points = sorted([pair[1] for pair in top])
+    print ("Filters of interest:", filter_points)
     return filter_points
 
 def analysis(mag, angle, thresh):
@@ -81,7 +83,7 @@ def phase_diff(mag, angle, thresh):
     plt.plot(x)
 
     a, b, r_value, c, std_err = stats.linregress(x,y)
-    print 'i:%d, j:%d, r-squared: %f' % (i,j,r_value ** 2)
+    print ('i:%d, j:%d, r-squared: %f' % (i,j,r_value ** 2))
     print_every = len(x) / 8
 
     plt.figure()

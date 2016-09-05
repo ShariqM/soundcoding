@@ -35,7 +35,7 @@ wc_ap = mag * np.exp(1j * angle)
 names = ['nothing', 'phase_corrupt', 'phase_replace']
 t = 0
 for wc_curr in (wc, wc_pc, wc_ap):
-    print 'Analyzing %s' % names[t]
+    print ('Analyzing %s' % names[t])
     x_recon = itransform(wc_curr, Fs, opt)
     plot("Reconstruction %d" % t, x_recon)
     args = (opt.wavelet_type, opt.nfilters_per_octave, names[t])

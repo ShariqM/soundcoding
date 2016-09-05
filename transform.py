@@ -46,6 +46,8 @@ def compute_wavelets(freqs, opt, plot=False):
             var = gaussian_var(w0, opt.bandwidth)
             wavelets[i,:] = (gaussian_wavelet(freqs, w0, var)) ** 2
         else:
+            if i == 0:
+                print ('Ignoring BW argument for sinusoid wavelet')
             w_prev = fmin * 2 ** (float(i-1)/nwavelets_per_octave)
             w_next = fmin * 2 ** (float(i+1)/nwavelets_per_octave)
             var = sinusoid_var(w_next, w0)
@@ -102,6 +104,6 @@ def itransform(wc, Fs, opt):
 
     x_recon = np.real(fft.ifft(Fx_recon)) # XXX Real OK?
     scale_factor = opt.MAX_AMP/np.max(x_recon)
-    print '\tScaling Reconstruction by %.2f' % scale_factor
+    print ('\tScaling Reconstruction by %.2f' % scale_factor)
     x_recon *= scale_factor
     return x_recon

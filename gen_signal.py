@@ -67,7 +67,7 @@ def gen_signal(opt):
             wav_files = glob.glob('data/nature/*.wav')
         x = np.zeros(N)
         wfile = np.random.choice(wav_files)
-        print "Using WAV %s" % wfile
+        print ("Using WAV %s" % wfile)
         Fs, x_raw = wavfile.read(wfile)
         x = construct_signal(x_raw)
         wavfile.write("test/sample.wav", Fs, x.astype(np.int16))
@@ -95,7 +95,7 @@ def gen_signal(opt):
                 pass
 
         if not success:
-            print "ERROR: Signal file not found"
+            print ("ERROR: Signal file not found")
             sys.exit(0)
 
         x = construct_signal(x_raw)

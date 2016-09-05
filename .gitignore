@@ -4,3 +4,5 @@
 data/
 misc/
 test/
+
+.DS_STORE
