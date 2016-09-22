@@ -6,34 +6,35 @@ from scipy.io import wavfile
 from numpy import fft
 from math import ceil, pi
 
-def gen_signal(opt):
+def get_start(x):
+    largest = np.max(np.abs(x))
+    for t in range(len(x)):
+        if np.abs(x[t]) > 0.5 * largest:
+            return max(0, t - 1000) ## FIXME Make this parse arg
+            #return max(0, t)
+    raise Exception("Signal not present?")
+
+def construct_signal(opt, x_raw):
+    if len(x_raw.shape) > 1:
+        x_raw = x_raw[:,0] # remove other channels
+    x = np.zeros(opt.N)
+    start = get_start(x_raw)
+    fill_length = min(opt.N, len(x_raw[start:]))
+    x[:fill_length] = x_raw[start:start+fill_length]
+    x *= opt.MAX_AMP/np.max(np.abs(x))
+    return x
+
+def scale_up(opt, x): # FIXME Fuse this with construct signal
+    largest = np.max(np.abs(x))
+    return x * (opt.MAX_AMP/largest)
+
+def gen_signal_help(opt):
     name, N = opt.signal_type, opt.N
     Fs = 25000
 
-    def scale_up(x): # FIXME Fuse this with construct signal
-        largest = np.max(np.abs(x))
-        return x * (opt.MAX_AMP/largest)
-
-    def get_start(x):
-        largest = np.max(np.abs(x))
-        for t in range(len(x)):
-            if np.abs(x[t]) > 0.5 * largest:
-                return max(0, t - 1000) ## FIXME Make this parse arg
-                #return max(0, t)
-        raise Exception("Signal not present?")
-
-    def construct_signal(x_raw):
-        if len(x_raw.shape) > 1:
-            x_raw = x_raw[:,0] # remove other channels
-        x = np.zeros(N)
-        start = get_start(x_raw)
-        fill_length = min(N, len(x_raw[start:]))
-        x[:fill_length] = x_raw[start:start+fill_length]
-        x *= opt.MAX_AMP/np.max(np.abs(x))
-        return x
 
     if name == "white":
-        white_noise = np.floor(scale_up(np.random.randn(N)))
+        white_noise = np.floor(scale_up(opt, np.random.randn(N)))
         wavfile.write("test/white.wav", Fs, white_noise.astype(np.int16))
         return Fs, white_noise
     elif name == "pink":
@@ -54,7 +55,7 @@ def gen_signal(opt):
 
         F_pink_noise = F_white_noise * freq_filter
         pink_noise = fft.ifft(F_pink_noise)
-        pink_noise = np.floor(scale_up(np.real(pink_noise)))
+        pink_noise = np.floor(scale_up(opt, np.real(pink_noise)))
         if plot:
             plt.plot(pink_noise)
             plt.show()
@@ -69,7 +70,7 @@ def gen_signal(opt):
         wfile = np.random.choice(wav_files)
         print ("Using WAV %s" % wfile)
         Fs, x_raw = wavfile.read(wfile)
-        x = construct_signal(x_raw)
+        x = construct_signal(opt, x_raw)
         wavfile.write("test/sample.wav", Fs, x.astype(np.int16))
         return Fs, x
     elif name == "harmonic":
@@ -85,7 +86,7 @@ def gen_signal(opt):
             x += np.tile(np.sin(np.linspace(-i*np.pi - offset, i*np.pi - (2*i*pi/period) - offset, period)), nperiods)[:N]
         return Fs, x
     else:
-        dirs = ['data/mine/%s.wav', 'data/wavs/s1_50kHz/%s.wav', 'data/nature/%s.wav']
+        dirs = ['data/mine/%s.wav', 'data/wavs/s1_50kHz/%s.wav', 'data/nature/%s.wav', 'data/noisex/%s.wav']
         success = False
         for path in dirs:
             try:
@@ -98,5 +99,16 @@ def gen_signal(opt):
             print ("ERROR: Signal file not found")
             sys.exit(0)
 
-        x = construct_signal(x_raw)
+        x = construct_signal(opt, x_raw)
         return Fs, x
+
+def gen_signal(opt):
+    Fs, x = gen_signal_help(opt)
+    if opt.add_noise:
+        FsN, noise_raw = wavfile.read('data/noisex/machinegun.wav')
+        noise = construct_signal(opt, noise_raw)
+        noise = np.floor(scale_up(opt, noise))
+        x = x + noise
+        wavfile.write('test/x+noise.wav', Fs, x.astype(np.int16))
+
+    return Fs, x

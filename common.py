@@ -9,6 +9,9 @@ def options():
     parser.add_option("-s", "--signal", dest="signal_type", default="speech",
                       help="(speech, white, pink, harmonic)")
 
+    parser.add_option("-n", "--add_noise", action='store_true', dest="add_noise",
+                      default=False)
+
     parser.add_option("-p", "--subsample_power", type="int", dest="subsample_power",
                       default=0, help="Subsample by 2 ** (arg)")
 
