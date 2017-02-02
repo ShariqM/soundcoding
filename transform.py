@@ -30,7 +30,7 @@ def sinusoid_var(freq, freq_prev):
 
 def compute_wavelets(freqs, opt, plot=False):
     fmin = 2 ** 6
-    noctaves = 7
+    noctaves = 2
     nwavelets_per_octave = opt.nfilters_per_octave
     nwavelets = noctaves * nwavelets_per_octave
     wavelets = np.zeros((nwavelets, len(freqs)))
@@ -61,8 +61,10 @@ def compute_wavelets(freqs, opt, plot=False):
 
     if plot:
         sfreq = fft.fftshift(freqs)
-        plt.axis([sfreq[0], sfreq[-1],  0, 1.5])
-        plt.legend()
+        #plt.axis([sfreq[0], sfreq[-1],  0, 1.5])
+        plt.axis([0, fmin * 2 ** (noctaves + 0.2), 0, 1.5])
+        plt.title("Wavelet Filters")
+        #plt.legend()
         plt.show()
 
     if opt.plot_total:
