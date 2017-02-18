@@ -29,8 +29,8 @@ def sinusoid_var(freq, freq_prev):
     return 2 * (freq - freq_prev) / pi
 
 def compute_wavelets(freqs, opt, plot=False):
-    fmin = 2 ** 6
-    noctaves = 2
+    fmin = 2 ** 6.3
+    noctaves = opt.noctaves
     nwavelets_per_octave = opt.nfilters_per_octave
     nwavelets = noctaves * nwavelets_per_octave
     wavelets = np.zeros((nwavelets, len(freqs)))
@@ -78,6 +78,7 @@ def compute_wavelets(freqs, opt, plot=False):
 
 def transform(Fs, x, opt, do_plot=False):
     subsample_factor = 2 ** opt.subsample_power
+    #start, end = 1000, 1000 +  opt.time_length
     start, end = 0, opt.time_length
 
     N = len(x)

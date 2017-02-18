@@ -21,6 +21,9 @@ def options():
     parser.add_option("-f", "--filters_per_octave", type="int", dest="nfilters_per_octave",
                       default=12, help="Number of filters per octave")
 
+    parser.add_option("-o", "--number_of_octaves", type="int", dest="noctaves",
+                      default=4, help="Number of octaves in transform")
+
     parser.add_option("-b", "--bandwidth", type="float", dest="bandwidth",
                       default=3, help="Bandwidth of the filter will be 1/bw * octave")
 
@@ -82,15 +85,24 @@ def plot(title, x, y=None):
     else:
         plt.plot(x)
 
-def imshow(title, data, hsv=True):
-    plt.figure()
-    ax = plt.subplot()
-    plt.title(title)
+def imshow(title, data, subplot=None,hsv=True):
+    if subplot is None:
+        plt.figure()
+        ax = plt.subplot()
+    else:
+        ax = plt.subplot(subplot)
+
+    plt.title(title, fontsize=18)
     if hsv:
         im = plt.imshow(data, cmap=plt.get_cmap('hsv'), interpolation="nearest")
     else:
         im = plt.imshow(data, interpolation="nearest")
+    plt.colorbar()
+
+    ax.set_ylabel("Filter", fontsize=16)
+    ax.set_xlabel("Time", fontsize=16)
     plt.gca().invert_yaxis()
     ax.set_aspect('auto') # Fill y-axis
+    return ax
 
 

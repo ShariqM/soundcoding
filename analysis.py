@@ -95,10 +95,29 @@ def phase_diff(mag, angle, thresh):
     plt.ylabel("Filter %d" % j)
     plt.legend()
 
+def wavelet_to_spikes(wc):
+    mag, angle = mag_angle(wc)
+    thresh = np.mean(mag) # - 0.4 * np.std(mag)
+
+    spikes = np.zeros_like(angle)
+    for f in range(angle.shape[0]):
+        #if f != 13:
+            #continue
+        for t in range(1, angle.shape[1]):
+            if mag[f,t] > thresh and angle[f,t] > 0 and angle[f,t-1] < 0:
+            #if angle[f,t] > 0 and angle[f,t-1] < 0:
+                spikes[f,t:t+10] = 0.8 if f % 2 == 0 else 1.2
+                #print ("Spike, %d" % t)
+    return spikes
+
 Fs, x = gen_signal(opt)
 wc = transform(Fs, x, opt)
 
+plt.figure()
+plt.plot(wc[15,:])
+
 mag, angle = mag_angle(wc)
+spikes = wavelet_to_spikes(wc)
 
 thresh = np.mean(mag) + 0.1 * np.std(mag)
 
@@ -108,19 +127,22 @@ thresh_angle[mag < thresh] = math.pi / 3
 plt.figure()
 plt.title("Input Signal (%s)" % opt.signal_type)
 plt.plot(x)
-plt.show()
 
 imshow("Wavegram", mag, hsv=False)
 
+plt.figure()
+ax = imshow("Spikes", spikes, subplot=211, hsv=False)
+ax = imshow("Wavegram", mag, subplot=212, hsv=False)
 #imshow(111, "Phase (Thresholded)", thresh_angle) # TODO Overlay
-imshow("Phase", angle)
-a = np.arange(0, mag.shape[1])
-b = np.arange(0, mag.shape[0])
-A,B = np.meshgrid(a,b)
-contour_thresh = np.mean(mag) + np.std(mag)
-plt.contour(A, B, mag, colors='k', levels=[contour_thresh], linewidths=5)
+#imshow("Phase", angle)
 
-phase_diff(mag, angle, contour_thresh)
+#a = np.arange(0, mag.shape[1])
+#b = np.arange(0, mag.shape[0])
+#A,B = np.meshgrid(a,b)
+#contour_thresh = np.mean(mag) + np.std(mag)
+#plt.contour(A, B, mag, colors='k', levels=[contour_thresh], linewidths=5)
+
+#phase_diff(mag, angle, contour_thresh)
 #analysis(mag, angle, thresh)
 
 plt.show()

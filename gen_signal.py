@@ -80,7 +80,7 @@ def gen_signal_help(opt):
         #offset = np.random.random() * 2 * np.pi + 1
         offset = 0
         #for i in (1,2,4,8,16):
-        for i in range(1,5+1):
+        for i in range(1,3+1):
             #x += np.tile(np.sin(np.linspace(-i*np.pi, i*np.pi, (period+1))), nperiods)[:N]
             #offset = np.random.randint(3) * np.pi/2
             x += np.tile(np.sin(np.linspace(-i*np.pi - offset, i*np.pi - (2*i*pi/period) - offset, period)), nperiods)[:N]
