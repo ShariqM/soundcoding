@@ -20,12 +20,12 @@ def init_weights(n_filter_width, n_filters):
 
 class Network(object):
     def __init__(self, n_filter_width, n_filters):
-        self.F = tf.Variable(init_weights(n_filter_width, n_filters), name="F")
-        return
+        self.P = tf.Variable(init_weights(n_filter_width, n_filters), name="Psi")
+        self.T = tf.Variable(init_weights(n_filter_width, n_filters), name="Theta")
 
     def step(self, x_input):
         #v_m = tf.conv1d(x_input, self.F, 1, 'SAME') # Add leak?
-        # Add Noise
+        # Add Noise?
         with tf.name_scope('neurons'):
 
             v_rest  = tf.constant([0] * n_filters, name='v_rest', dtype=tf.float32)
@@ -43,15 +43,10 @@ class Network(object):
                 #scope.reuse_variables()
 
             v_conv = tf.einsum("i,ij->j", x_input, self.F)
+# Multiply by e^(-t/tau)
+            a_m =
             #v_conv = tf.reduce_sum(tf.mul(x_input, F)) # Dot product
             #v_conv = tf.conv1d(x_input, self.F, 1, 'SAME')
-            #tf.scalar_summary(['v_m_%d' % t] * n_filters, v_m)
-            #tf.scalar_summary(['a_m_%d' % t] * n_filters, a_m)
-            #tf.scalar_summary(['v_m_%d' % i for i in range(n_filters)], v_m)
-            #tf.scalar_summary(['a_m_%d' % i for i in range(n_filters)], a_m)
-            #for i in range(n_filters):
-            #tf.scalar_summary(['a_m'] * n_filters, a_m)
-            #tf.scalar_summary(['v_m'] * n_filters, a_m)
             #tf.scalar_summary(['a_m'] * n_filters, a_m)
 
             def spike_rest_op():
@@ -62,11 +57,12 @@ class Network(object):
                 return tf.tuple((v_m.assign(v_conv), a_spike,
                                 a_m))
 
-            a_m = tf.select(tf.greater(v_conv, 0.5), a_spike, a_rest)
-            v_m = tf.select(tf.greater(v_conv, 0.5), v_rest, v_conv)
+            threshold = 2.0
+            a_m = tf.select(tf.greater(v_conv, threshold), a_spike, a_rest)
+            v_m = tf.select(tf.greater(v_conv, threshold), v_rest, v_conv)
             #_step = tf.case((
-                             #(tf.reshape(tf.greater(v_m, 0.5), [n_filters]), spike_rest_op),
-                             #(tf.greater(v_m, 0.5), spike_rest_op),
+                             #(tf.reshape(tf.greater(v_m, threshold), [n_filters]), spike_rest_op),
+                             #(tf.greater(v_m, threshold), spike_rest_op),
                             #),
                              #responding_op)
         #return tf.group(a_m, v_m)
