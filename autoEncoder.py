@@ -50,6 +50,8 @@ class Network(object):
 #batch = np.random.randn(batch_size, n_input, 1)
 data = np.random.randn(n_input)
 
+
+
 with tf.Graph().as_default(), tf.Session() as sess:
     network = Network(n_filter_width, n_filters)
     data_ph = tf.placeholder(tf.float32, shape=[n_filter_width], name="data")
@@ -78,8 +80,12 @@ with tf.Graph().as_default(), tf.Session() as sess:
         #summary_writer.flush()
 
     plt.subplot(2,1,1)
-    plt.imshow(aResults, interpolation="nearest")
+    #plt.imshow(aResults, interpolation="nearest")
+    #plt.scatter(range(aResults.shape[1]), aResults[0,:])
+    plt.plot(aResults[0,:])
     plt.subplot(2,1,2)
-    plt.imshow(vResults, interpolation="nearest")
+    #plt.imshow(vResults, interpolation="nearest")
+    #plt.scatter(range(vResults.shape[1]), vResults[0,:])
+    plt.plot(vResults[0,:])
     plt.show()
 
