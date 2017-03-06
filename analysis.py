@@ -111,6 +111,7 @@ def wavelet_to_spikes(wc):
     return spikes
 
 Fs, x = gen_signal(opt)
+pdb.set_trace()
 wc = transform(Fs, x, opt)
 
 plt.figure()

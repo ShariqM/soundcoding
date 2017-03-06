@@ -7,6 +7,7 @@ from numpy import fft
 from math import ceil, pi
 
 def get_start(x):
+    return 0
     largest = np.max(np.abs(x))
     for t in range(len(x)):
         if np.abs(x[t]) > 0.5 * largest:

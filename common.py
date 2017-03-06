@@ -31,7 +31,7 @@ def options():
                       default="sinusoid", help="Type of wavelet (gaussian, sinusoid)")
 
     parser.add_option("-N", "--transform_length", type="int", dest="N",
-                      default=2 ** 16)
+                      default=2 ** 20)
 
     parser.add_option("-T", "--plot_total", action='store_true', dest="plot_total",
                       default=False)
