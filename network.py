@@ -4,11 +4,13 @@ def init_weights(n_filter_width, n_filters):
             1/tf.sqrt(tf.cast(n_filter_width, tf.float32)))
 
 class Network(object):
-    def __init__(self, n_filter_width, n_filters):
+    def __init__(self, model, n_filter_width, n_filters):
         self.P = tf.Variable(init_weights(n_filter_width, n_filters), name="Psi")
-        #self.T = tf.Variable(init_weights(n_filter_width, n_filters), name="Theta")
-        self.tau = 16 # 64/4 ~= 16 (e-4 is about irrelevant so dt / tau = 4; tau = dt/4;)
-        self.threshold = 0.5 # XXX ??? XXX
+        self.tau = model.tau
+        self.threshold = model.threshold
+
+    def get_tf_weights(self):
+        return self.P
 
     def spike_activation_impl(self, x):
         cond = tf.less(x, tf.ones(tf.shape(x)) * self.threshold)

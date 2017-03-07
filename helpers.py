@@ -22,43 +22,52 @@ def get_peaks(func):
     return peaks
 
 class Plotter():
-    def __init__(self, n_steps):
-        self.n_steps = n_steps
+    def __init__(self, model):
+        self.model = model
 
     def setup_plot(self, func, target_batch):
-        self.figure, axes = plt.subplots(3,2)
-        n_steps = self.n_steps
+        self.figure, axes = plt.subplots(3,2, figsize=(16,10))
+        n_steps = self.model.n_steps
+        n_filter_width = self.model.n_filter_width
+        threshold = self.model.threshold
 
         axes[0,0].set_title("Signal")
         axes[0,0].plot(func[:n_steps])
 
         axes[1,0].set_title("Target")
-        axes[1,0].set_ylim([0, 2])
+        axes[1,0].set_ylim([0, 1.5])
         axes[1,0].plot(target_batch[0,:,0])
 
         axes[2,0].set_title("A (Network Output)")
         self.a_data = axes[2,0].plot(range(n_steps), np.ones(n_steps))[0]
-        axes[2,0].set_ylim([0, 2])
+        axes[2,0].set_ylim([0, 1.5])
 
-        axes[0,1].set_title("W")
-        axes[0,1].set_ylim([-2, 2])
-        self.w_data = axes[0,1].plot(range(n_steps), np.ones(n_steps))[0]
+        axes[0,1].set_title("Weights")
+        axes[0,1].set_ylim([-1,1])
+        self.weights_data = axes[0,1].plot(range(n_filter_width), np.ones(n_filter_width))[0]
 
-        axes[1,1].set_title("V_dum")
-        axes[1,1].set_ylim([-2, 2])
-        self.v_dum_data = axes[1,1].plot(range(n_steps), np.ones(n_steps))[0]
+        axes[1,1].set_title("W")
+        axes[1,1].set_ylim([-1, 1])
+        self.w_data = axes[1,1].plot(range(n_steps), np.zeros(n_steps))[0]
+
+        #axes[1,1].set_title("V_dum")
+        #axes[1,1].set_ylim([0, 2 * model.threshold])
+        #axes[1,1].plot(range(n_steps), np.ones(n_steps) * model.threshold, linestyle='--')
+        #self.v_dum_data = axes[1,1].plot(range(n_steps), np.ones(n_steps))[0]
 
         axes[2,1].set_title("V")
-        axes[2,1].set_ylim([-2, 2])
+        axes[2,1].set_ylim([0, 2 * threshold])
+        axes[2,1].plot(range(n_steps), np.ones(n_steps) * threshold, linestyle='--')
         self.v_data = axes[2,1].plot(range(n_steps), np.ones(n_steps))[0]
 
         self.figure.canvas.draw()
         plt.show(block=False)
 
-    def update_plot(self, w_vals, v_dum_vals, v_vals, a_vals):
+    def update_plot(self, weights, w_vals, v_vals, a_vals):
         self.a_data.set_ydata(a_vals)
         self.w_data.set_ydata(w_vals)
-        self.v_dum_data.set_ydata(v_dum_vals)
+        self.weights_data.set_ydata(weights)
+        #self.weights_data.set_ydata(np.random.randn(self.model.n_filter_width))
         self.v_data.set_ydata(v_vals)
         self.figure.canvas.draw()
 ''' OLD
