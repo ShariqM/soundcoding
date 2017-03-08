@@ -21,6 +21,17 @@ def get_peaks(func):
             peaks.append(i)
     return peaks
 
+def get_learning_rate(t):
+    learning_rate = 1e-1
+    bounds = [2 * 2 ** i for i in range(10)]
+    for bound in bounds:
+        if t < bound:
+            break
+        learning_rate *= 0.5
+        if t == bound:
+            print ("Decreasing rate to: ", learning_rate)
+    return learning_rate
+
 class Plotter():
     def __init__(self, model):
         self.model = model
@@ -70,6 +81,7 @@ class Plotter():
         #self.weights_data.set_ydata(np.random.randn(self.model.n_filter_width))
         self.v_data.set_ydata(v_vals)
         self.figure.canvas.draw()
+
 ''' OLD
 if make_target:
             print ('target made')
