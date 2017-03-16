@@ -16,13 +16,13 @@ def options():
                       default=0, help="Subsample by 2 ** (arg)")
 
     parser.add_option("-l", "--length", type="int", dest="time_length",
-                      default=8000, help="Number of timepoints to look at")
+                      default=16000, help="Number of timepoints to look at")
 
     parser.add_option("-f", "--filters_per_octave", type="int", dest="nfilters_per_octave",
                       default=12, help="Number of filters per octave")
 
     parser.add_option("-o", "--number_of_octaves", type="int", dest="noctaves",
-                      default=4, help="Number of octaves in transform")
+                      default=6, help="Number of octaves in transform")
 
     parser.add_option("-b", "--bandwidth", type="float", dest="bandwidth",
                       default=3, help="Bandwidth of the filter will be 1/bw * octave")
@@ -31,7 +31,7 @@ def options():
                       default="sinusoid", help="Type of wavelet (gaussian, sinusoid)")
 
     parser.add_option("-N", "--transform_length", type="int", dest="N",
-                      default=2 ** 20)
+                      default=2 ** 15)
 
     parser.add_option("-T", "--plot_total", action='store_true', dest="plot_total",
                       default=False)

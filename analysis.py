@@ -20,7 +20,7 @@ def get_interesting_filters(mag, thresh):
     band_thresh = 1
 
     start = 0
-    mid = mag.shape[1]/2
+    mid = int(mag.shape[1]/2)
     for k in range(start, mag.shape[0]):
         if mag[k,mid] > thresh:
             band_length = band_length + 1
@@ -111,16 +111,24 @@ def wavelet_to_spikes(wc):
     return spikes
 
 Fs, x = gen_signal(opt)
-pdb.set_trace()
 wc = transform(Fs, x, opt)
 
+
 plt.figure()
-plt.plot(wc[15,:])
+plt.plot(wc[14,:])
+plt.plot(wc[16,:])
+plt.plot(wc[18,:])
+plt.show()
 
 mag, angle = mag_angle(wc)
+thresh = np.mean(mag) + 0.1 * np.std(mag)
+
+wc_new = np.zeros_like(wc)
+analysis(mag, angle, thresh)
+pdb.set_trace()
+
 spikes = wavelet_to_spikes(wc)
 
-thresh = np.mean(mag) + 0.1 * np.std(mag)
 
 thresh_angle = np.copy(angle)
 thresh_angle[mag < thresh] = math.pi / 3
@@ -144,6 +152,5 @@ ax = imshow("Wavegram", mag, subplot=212, hsv=False)
 #plt.contour(A, B, mag, colors='k', levels=[contour_thresh], linewidths=5)
 
 #phase_diff(mag, angle, contour_thresh)
-#analysis(mag, angle, thresh)
 
 plt.show()

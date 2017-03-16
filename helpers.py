@@ -22,8 +22,8 @@ def get_peaks(func):
     return peaks
 
 def get_learning_rate(t):
-    learning_rate = 1e-1
-    bounds = [2 * 2 ** i for i in range(10)]
+    learning_rate = 1e-3
+    bounds = [10 * (2 ** i) for i in range(10)]
     for bound in bounds:
         if t < bound:
             break
@@ -36,7 +36,7 @@ class Plotter():
     def __init__(self, model):
         self.model = model
 
-    def setup_plot(self, func, target_batch):
+    def setup_plot_a(self, func, target_batch):
         self.figure, axes = plt.subplots(3,2, figsize=(16,10))
         n_steps = self.model.n_steps
         n_filter_width = self.model.n_filter_width
@@ -74,13 +74,56 @@ class Plotter():
         self.figure.canvas.draw()
         plt.show(block=False)
 
-    def update_plot(self, weights, w_vals, v_vals, a_vals):
+    def update_plot_a(self, weights, w_vals, v_vals, a_vals):
         self.a_data.set_ydata(a_vals)
         self.w_data.set_ydata(w_vals)
         self.weights_data.set_ydata(weights)
         #self.weights_data.set_ydata(np.random.randn(self.model.n_filter_width))
         self.v_data.set_ydata(v_vals)
         self.figure.canvas.draw()
+
+    def setup_plot_x(self, x_raw):
+        self.figure, axes = plt.subplots(3,3, figsize=(16,12))
+        n_steps = self.model.n_steps
+        n_filter_width = self.model.n_filter_width
+        threshold = self.model.threshold
+
+
+        axes[0,0].set_title("Signal")
+        axes[0,0].plot(x_raw)
+        axes[0,0].set_ylim([-1.5, 1.5])
+
+        def setup_plot(loc, title, y_lim, sz):
+            x, y = loc[0], loc[1]
+            axes[x,y].set_title(title, fontsize=18)
+            axes[x,y].set_ylim(y_lim)
+            return axes[x,y].plot(range(sz), np.zeros(sz))[0]
+
+        self.x_hat_data = setup_plot((1,0), "Reconstruction", (-1.5,1.5), n_steps)
+        self.a_data = setup_plot((2,0), "A", (0,1.5), n_steps)
+
+        self.analysis_data = setup_plot((0,1), "Analysis", (-1,1), n_filter_width)
+        self.synthesis_data = setup_plot((1,1), "Synthesis", (-1,1), n_filter_width)
+        self.w_data = setup_plot((0,2), "W", (-1,1), n_steps)
+
+        self.v_data = setup_plot((1,2), "V", (0, 2 * threshold), n_steps) # Fix threshold
+        axes[1,2].plot(range(n_steps), np.ones(n_steps) * threshold, linestyle='--')
+
+        self.figure.canvas.draw()
+        plt.show(block=False)
+
+    def update_plot_x(self, x_hat_vals, analysis_vals, synthesis_vals, w_vals, v_vals, a_vals):
+        self.x_hat_data.set_ydata(x_hat_vals)
+        self.a_data.set_ydata(a_vals)
+        self.w_data.set_ydata(w_vals)
+
+        self.analysis_data.set_ydata(analysis_vals)
+        self.synthesis_data.set_ydata(synthesis_vals)
+
+        self.v_data.set_ydata(v_vals)
+        self.figure.canvas.draw()
+
+
 
 ''' OLD
 if make_target:

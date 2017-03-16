@@ -9,13 +9,13 @@ def init_conv_weights(n_filter_width, n_filters):
 
 class AutoEncoder(object):
     def __init__(self, model, n_filter_width, n_filters):
-        self.P = tf.Variable(init_weights(n_filter_width, n_filters), name="Psi")
-        self.T = tf.Variable(init_conv_weights(n_filter_width, n_filters), name="Theta")
+        self.A = tf.Variable(init_weights(n_filter_width, n_filters), name="analysis_filters")
+        self.S = tf.Variable(init_conv_weights(n_filter_width, n_filters), name="synthesis_filters")
         self.tau = model.tau
         self.threshold = model.threshold
 
-    def get_tf_weights(self):
-        return self.P
+    def get_filters_ph(self):
+        return self.A, self.S
 
     def spike_activation_impl(self, x):
         cond = tf.less(x, tf.ones(tf.shape(x)) * self.threshold)
@@ -45,7 +45,7 @@ class AutoEncoder(object):
 
     def step(self, x_input, v_past):
         with tf.name_scope('neurons'):
-            w_t = tf.matmul(x_input, self.P)
+            w_t = tf.matmul(x_input, self.A)
             v_dum_t = tf.nn.relu(w_t) + tf.exp(-1/self.tau) * v_past # dummy value
 
             v_t = self.voltage(v_dum_t)
@@ -53,7 +53,7 @@ class AutoEncoder(object):
 
         return w_t, v_dum_t, v_t, a_t
 
-    def decoder(self, a_ph):
+    def decode(self, a_ph):
         # a_ph - Batch_size * n_steps * n_filters (in_channels = n_filters)
-        x_ph = tf.nn.conv1d(a_ph, self.T, 1, padding='VALID')
+        x_ph = tf.nn.conv1d(a_ph, self.S, 1, padding='SAME')
         return x_ph
