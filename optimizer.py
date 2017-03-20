@@ -6,8 +6,10 @@ import time
 from autoEncoder import AutoEncoder
 from helpers import *
 
+''' Toy Data '''
 class Model():
-    tau = 16 # 64/4 ~= 16 (e-4 is about irrelevant so dt / tau = 4; tau = dt/4;)
+    tau_RC = 16 # 64/4 ~= 16 (e-4 is about irrelevant so dt / tau = 4; tau = dt/4;)
+    tau_ABS = 24
     threshold = 0.5 # XXX ??? XXX
     n_filters = 1
     n_filter_width = 16
@@ -15,6 +17,19 @@ class Model():
     n_sample_rate = 16000
     n_batch_size = 8
     n_runs = 2 ** 10
+
+''' Data
+class Model():
+    tau_RC = 160
+    tau_ABS = 160
+    threshold = 0.5 # XXX ??? XXX
+    n_filters = 2
+    n_filter_width = 160
+    n_steps = 1600
+    n_sample_rate = 16000
+    n_batch_size = 8
+    n_runs = 2 ** 10
+'''
 
 model = Model()
 
@@ -24,6 +39,8 @@ auto_encoder = AutoEncoder(model, n_filter_width, n_filters)
 
 x_ph = tf.placeholder(tf.float32, shape=[n_batch_size, n_steps, n_filter_width], name="data")
 v_past_ph = tf.placeholder(tf.float32, shape=[n_batch_size, n_filters], name="v_past")
+a_past_ph = tf.placeholder(tf.float32, shape=[n_batch_size, n_filters], name="a_past")
+f_past_ph = tf.placeholder(tf.float32, shape=[n_batch_size, n_filters], name="f_past")
 a_target_ph = tf.placeholder(tf.float32, shape=[n_batch_size, n_steps, n_filters], name="a_target")
 x_target_ph = tf.placeholder(tf.float32, shape=[n_batch_size, n_steps, 1], name="x_target")
 
@@ -32,16 +49,18 @@ def stepify(x_ph, n_filter_width, n_steps):
     x_ph = tf.reshape(x_ph, [-1, n_filter_width]) # n_batch_size * n_steps by nInput
     return tf.split(axis=0, num_or_size_splits=n_steps, value=x_ph)
 
-def unroll(x_ph, v_past_ph):
+def unroll(x_ph, v_past_ph, a_past_ph, f_past_ph):
     x_ph = stepify(x_ph, n_filter_width, n_steps)
     v_t_ph = v_past_ph
+    a_t_ph = a_past_ph
+    f_t_ph = f_past_ph
 
     a_ph = []
     v_dum_ph = []
     v_ph = []
     w_ph = []
     for i in range(n_steps):
-        w_t_ph, v_dum_t_ph, v_t_ph, a_t_ph = auto_encoder.step(x_ph[i], v_t_ph)
+        w_t_ph, v_dum_t_ph, v_t_ph, a_t_ph, f_t_ph = auto_encoder.step(x_ph[i], v_t_ph, a_t_ph, f_t_ph)
         w_ph.append(w_t_ph)
         v_dum_ph.append(v_dum_t_ph)
         v_ph.append(v_t_ph)
@@ -52,7 +71,7 @@ def unroll(x_ph, v_past_ph):
            tf.transpose(tf.stack(v_ph), [1, 0, 2]), \
            tf.transpose(tf.stack(a_ph), [1, 0, 2])
 
-w_ph, v_dum_ph, v_ph, a_ph = unroll(x_ph, v_past_ph)
+w_ph, v_dum_ph, v_ph, a_ph = unroll(x_ph, v_past_ph, a_past_ph, f_past_ph)
 x_hat_ph = auto_encoder.decode(a_ph) # batch_size x n_steps x 1
 
 #w_cost = tf.reduce_sum(w_ph)
@@ -72,6 +91,8 @@ make_target = False
 plot_a = False
 with tf.Session() as sess:
     v_t = np.zeros([n_batch_size, n_filters])
+    a_t = np.zeros([n_batch_size, n_filters])
+    f_t = np.zeros([n_batch_size, n_filters])
 
     x_raw = np.sin(np.linspace(0, 8 * np.pi, n_steps + n_filter_width))
     x_target = np.tile(x_raw[:n_steps], (n_batch_size, 1))
@@ -90,8 +111,9 @@ with tf.Session() as sess:
 
     sess.run(init_op)
     for t in range(model.n_runs):
-        feed_dict = {x_ph: x_batch, v_past_ph: v_t, x_target_ph: x_target, \
-                     learning_rate_ph: get_learning_rate(t)}
+        feed_dict = {x_ph: x_batch, v_past_ph: v_t, a_past_ph: a_t, f_past_ph: f_t, \
+                     x_target_ph: x_target, learning_rate_ph: get_learning_rate(t)}
+
         w_vals, v_dum_vals, v_vals, a_vals, analysis_vals, synthesis_vals, x_hat_vals, cost, _ = \
             sess.run([w_ph, v_dum_ph, v_ph, a_ph, analysis_ph, synthesis_ph, x_hat_ph, cost_op, optimizer], feed_dict=feed_dict)
 

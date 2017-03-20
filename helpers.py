@@ -22,7 +22,7 @@ def get_peaks(func):
     return peaks
 
 def get_learning_rate(t):
-    learning_rate = 1e-3
+    learning_rate = 1e-1
     bounds = [10 * (2 ** i) for i in range(10)]
     for bound in bounds:
         if t < bound:
@@ -102,9 +102,9 @@ class Plotter():
         self.x_hat_data = setup_plot((1,0), "Reconstruction", (-1.5,1.5), n_steps)
         self.a_data = setup_plot((2,0), "A", (0,1.5), n_steps)
 
-        self.analysis_data = setup_plot((0,1), "Analysis", (-1,1), n_filter_width)
+        self.analysis_data = setup_plot((0,1), "Analysis", (-2,2), n_filter_width)
         self.synthesis_data = setup_plot((1,1), "Synthesis", (-1,1), n_filter_width)
-        self.w_data = setup_plot((0,2), "W", (-1,1), n_steps)
+        self.w_data = setup_plot((0,2), "W", (-3,3), n_steps)
 
         self.v_data = setup_plot((1,2), "V", (0, 2 * threshold), n_steps) # Fix threshold
         axes[1,2].plot(range(n_steps), np.ones(n_steps) * threshold, linestyle='--')
