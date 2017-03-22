@@ -22,8 +22,8 @@ def get_peaks(func):
     return peaks
 
 def get_learning_rate(t):
-    learning_rate = 1e-1
-    bounds = [10 * (2 ** i) for i in range(10)]
+    learning_rate = 5e-3
+    bounds = [40 * (2 ** i) for i in range(10)]
     for bound in bounds:
         if t < bound:
             break
@@ -86,6 +86,7 @@ class Plotter():
         self.figure, axes = plt.subplots(3,3, figsize=(16,12))
         n_steps = self.model.n_steps
         n_filter_width = self.model.n_filter_width
+        n_filters = self.model.n_filters
         threshold = self.model.threshold
 
 
@@ -93,18 +94,22 @@ class Plotter():
         axes[0,0].plot(x_raw)
         axes[0,0].set_ylim([-1.5, 1.5])
 
-        def setup_plot(loc, title, y_lim, sz):
+        def setup_plot(loc, title, y_lim, sz, n_filters=4):
             x, y = loc[0], loc[1]
             axes[x,y].set_title(title, fontsize=18)
             axes[x,y].set_ylim(y_lim)
-            return axes[x,y].plot(range(sz), np.zeros(sz))[0]
 
-        self.x_hat_data = setup_plot((1,0), "Reconstruction", (-1.5,1.5), n_steps)
+            data = []
+            for i in range(n_filters):
+                data.append(axes[x,y].plot(range(sz), np.zeros(sz))[0])
+            return data
+
+        self.x_hat_data = setup_plot((1,0), "Reconstruction", (-1.5,1.5), n_steps, 1)[0]
         self.a_data = setup_plot((2,0), "A", (0,1.5), n_steps)
 
         self.analysis_data = setup_plot((0,1), "Analysis", (-2,2), n_filter_width)
         self.synthesis_data = setup_plot((1,1), "Synthesis", (-1,1), n_filter_width)
-        self.w_data = setup_plot((0,2), "W", (-3,3), n_steps)
+        self.w_data = setup_plot((0,2), "W", (-10,10), n_steps)
 
         self.v_data = setup_plot((1,2), "V", (0, 2 * threshold), n_steps) # Fix threshold
         axes[1,2].plot(range(n_steps), np.ones(n_steps) * threshold, linestyle='--')
@@ -114,15 +119,72 @@ class Plotter():
 
     def update_plot_x(self, x_hat_vals, analysis_vals, synthesis_vals, w_vals, v_vals, a_vals):
         self.x_hat_data.set_ydata(x_hat_vals)
-        self.a_data.set_ydata(a_vals)
-        self.w_data.set_ydata(w_vals)
+        for i in range(self.model.n_filters):
+            self.a_data[i].set_ydata(a_vals[:,i])
+            self.w_data[i].set_ydata(w_vals[:,i])
 
-        self.analysis_data.set_ydata(analysis_vals)
-        self.synthesis_data.set_ydata(synthesis_vals)
+            self.analysis_data[i].set_ydata(analysis_vals[:,i])
+            self.synthesis_data[i].set_ydata(synthesis_vals[:,i])
 
-        self.v_data.set_ydata(v_vals)
+            self.v_data[i].set_ydata(v_vals[:,i])
         self.figure.canvas.draw()
 
+    def setup_plot_3(self, x_raw):
+        self.figure, axes = plt.subplots(3,2, figsize=(16,10))
+        n_steps = self.model.n_steps
+        n_filter_width = self.model.n_filter_width
+        n_filters = self.model.n_filters
+
+        axes[0,0].set_title("Signal")
+        axes[0,0].plot(x_raw)
+        axes[0,0].set_ylim([-1.5, 1.5])
+
+        def setup_plot(loc, title, y_lim, sz, n_filters=4):
+            x, y = loc[0], loc[1]
+            axes[x,y].set_title(title, fontsize=18)
+            axes[x,y].set_ylim(y_lim)
+
+            data = []
+            for i in range(n_filters):
+                data.append(axes[x,y].plot(range(sz), np.zeros(sz))[0])
+            return data
+
+        self.x_hat_data = setup_plot((1,0), "Reconstruction", (-1.5,1.5), n_steps, 1)[0]
+        self.a_data = setup_plot((2,0), "A", (-3,3), n_steps)
+
+        self.analysis_data = setup_plot((0,1), "Analysis", (-1,1), n_filter_width)
+        self.synthesis_data = setup_plot((1,1), "Synthesis", (-1,1), n_filter_width)
+
+        self.figure.canvas.draw()
+        plt.show(block=False)
+
+    def update_plot_3(self, x_hat_vals, analysis_vals, synthesis_vals, a_vals):
+        self.x_hat_data.set_ydata(x_hat_vals)
+        for i in range(self.model.n_filters):
+            self.a_data[i].set_ydata(a_vals[:,i])
+            self.analysis_data[i].set_ydata(analysis_vals[:,i])
+            self.synthesis_data[i].set_ydata(synthesis_vals[:,i])
+
+        self.figure.canvas.draw()
+
+    def setup_plot_bf(self):
+        n_filter_width = self.model.n_filter_width
+        n_filters = self.model.n_filters
+
+        sz = int(np.ceil(np.sqrt(n_filters)))
+        self.figure, axes = plt.subplots(sz, sz, figsize=(16,10))
+        self.data = []
+        for i in range(sz):
+            for j in range(sz):
+                    self.data.append(axes[i,j].plot(range(n_filter_width), np.zeros(n_filter_width))[0])
+
+        self.figure.canvas.draw()
+        plt.show(block=False)
+
+    def update_plot_bf(self, analysis_vals):
+        for i in range(self.model.n_filters):
+            self.data[i].set_ydata(analysis_vals[:,i])
+        self.figure.canvas.draw()
 
 
 ''' OLD
