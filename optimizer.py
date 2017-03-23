@@ -11,10 +11,10 @@ from scipy.io import wavfile
 import glob
 
 class Model():
-    n_filters = 32
-    n_filter_width = 256
-    n_steps = 2048
-    n_sample_rate = 16000
+    n_filters = 48
+    n_filter_width = 512
+    n_steps = 25000
+    n_sample_rate = 25000
     n_batch_size = 32
     n_runs = 2 ** 10
 
@@ -36,14 +36,11 @@ x_target_ph = tf.placeholder(tf.float32, shape=[n_batch_size, n_steps, 1], name=
 a_ph = auto_encoder.encode(x_ph, n_ph)
 x_hat_ph = auto_encoder.decode(a_ph)
 
-wlog('Unrolling complete')
-
 cost_op = tf.reduce_mean(tf.square(x_target_ph - x_hat_ph))
 init_op = tf.global_variables_initializer()
 
 learning_rate_ph = tf.placeholder(tf.float32, shape=[])
 optimizer = tf.train.GradientDescentOptimizer(learning_rate_ph).minimize(cost_op)
-print ("Graph built")
 
 def get_start(x):
     largest = np.max(np.abs(x))
@@ -61,7 +58,8 @@ def snr(x_batch, x_hat_vals):
     return snr
 
 plot_all = False
-plot_bf  = True
+plot_bf  = False
+#with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
 with tf.Session() as sess:
     print ('Loading data')
 
@@ -99,6 +97,12 @@ with tf.Session() as sess:
         analysis_vals, synthesis_vals, a_vals, x_hat_vals, cost, _ = \
             sess.run([analysis_ph, synthesis_ph, a_ph, x_hat_ph, cost_op, optimizer], \
                 feed_dict=feed_dict)
+
+        if t % 25 == 0:
+            np.save('filters/analysis.npy', analysis_vals)
+            np.save('samples/actual.npy', x_batch)
+            np.save('samples/reconstruction.npy', x_hat_vals)
+            print ("Files saved")
 
         if plot_bf and t % 5 == 0:
             print ('\tupdate')
