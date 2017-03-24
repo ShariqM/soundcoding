@@ -11,12 +11,13 @@ from scipy.io import wavfile
 import glob
 
 class Model():
-    n_filters = 48
-    n_filter_width = 512
-    n_steps = 25000
+    n_filters = 32
+    n_filter_width = 128
+    n_steps = 2 ** 12
     n_sample_rate = 25000
-    n_batch_size = 32
+    n_batch_size = 16
     n_runs = 2 ** 10
+    Lambda = 10
 
 start = datetime.datetime.now()
 def wlog(stmt):
@@ -36,7 +37,7 @@ x_target_ph = tf.placeholder(tf.float32, shape=[n_batch_size, n_steps, 1], name=
 a_ph = auto_encoder.encode(x_ph, n_ph)
 x_hat_ph = auto_encoder.decode(a_ph)
 
-cost_op = tf.reduce_mean(tf.square(x_target_ph - x_hat_ph))
+cost_op = tf.reduce_mean(tf.square(x_target_ph - x_hat_ph)) + model.Lambda * tf.reduce_mean(a_ph)
 init_op = tf.global_variables_initializer()
 
 learning_rate_ph = tf.placeholder(tf.float32, shape=[])
@@ -63,17 +64,11 @@ plot_bf  = False
 with tf.Session() as sess:
     print ('Loading data')
 
-    Fs, x_rawz = wavfile.read('data/wavs/s1/bwig3a.wav')
-    start = get_start(x_rawz)
-    x_raw = x_rawz[start:start + n_steps]
-    x_raw = x_raw / np.max(x_raw)
-    x_batch = np.reshape(np.tile(x_raw, (n_batch_size, 1)), (n_batch_size, n_steps, 1))
-
     noise = np.tile(np.random.randn(n_steps, n_filters), (n_batch_size, 1, 1)) * 0
     analysis_ph, synthesis_ph = auto_encoder.get_filters_ph()
 
     plotter = Plotter(model)
-    wav_files = glob.glob('data/wavs/s1/*.wav')
+    wav_files = glob.glob('data/wavs/rainforest_mammals_disc1/edited/*.wav')
     if plot_bf:
         plotter.setup_plot_bf()
 
@@ -85,11 +80,13 @@ with tf.Session() as sess:
                 #break
             wfile = np.random.choice(wav_files)
             Fs, x_raw = wavfile.read(wfile)
+            pdb.set_trace()
             start = np.random.randint(x_raw.shape[0] - n_steps)
             x_batch[i,:,0] = x_raw[start:start+n_steps]
             x_batch[i,:,0] = x_batch[i,:,0] / np.max(x_batch[i,:,0])
             if plot_all and i == 0:
                 plotter.setup_plot_3(x_batch[0,:,0])
+        #covX = np.cov(x_batch[:,:,0].T)
 
         feed_dict = {x_ph: x_batch, n_ph: noise, x_target_ph: x_batch, \
                      learning_rate_ph: get_learning_rate(t)}

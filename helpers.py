@@ -22,8 +22,8 @@ def get_peaks(func):
     return peaks
 
 def get_learning_rate(t):
-    learning_rate = 5e-3
-    bounds = [10 * (2 ** i) for i in range(10)]
+    learning_rate = 4e-3
+    bounds = [20 * (2 ** i) for i in range(10)]
     for bound in bounds:
         if t < bound:
             break
