@@ -9,15 +9,21 @@ from autoEncoder import AutoEncoder
 from helpers import *
 from scipy.io import wavfile
 import glob
+from optparse import OptionParser
+
+parser = OptionParser()
+parser.add_option("-l", "--load_filters", action='store_true', dest="load",
+                  default=False)
+(opt, args) = parser.parse_args()
 
 class Model():
     n_filters = 32
     n_filter_width = 128
-    n_steps = 2 ** 12
+    n_steps = 2 ** 14
     n_sample_rate = 25000
-    n_batch_size = 16
+    n_batch_size = 32
     n_runs = 2 ** 10
-    Lambda = 10
+    Lambda = 2.0
 
 start = datetime.datetime.now()
 def wlog(stmt):
@@ -48,7 +54,6 @@ def get_start(x):
     for t in range(len(x)):
         if np.abs(x[t]) > 0.5 * largest:
             return max(0, t - 200) ## FIXME Make this parse arg
-            #return max(0, t)
 
 def snr(x_batch, x_hat_vals):
     R = x_batch - x_hat_vals
@@ -62,25 +67,29 @@ plot_all = False
 plot_bf  = False
 #with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
 with tf.Session() as sess:
-    print ('Loading data')
+    sess.run(init_op)
+    analysis_ph, synthesis_ph = auto_encoder.get_filters_ph()
+    if opt.load:
+        print ('loading weights')
+        assign_analysis = analysis_ph.assign(np.load('filters/analysis.npy'))
+        assign_synthesis = synthesis_ph.assign(np.load('filters/synthesis.npy'))
+        sess.run(assign_analysis)
+        sess.run(assign_synthesis)
 
     noise = np.tile(np.random.randn(n_steps, n_filters), (n_batch_size, 1, 1)) * 0
-    analysis_ph, synthesis_ph = auto_encoder.get_filters_ph()
-
     plotter = Plotter(model)
     wav_files = glob.glob('data/wavs/rainforest_mammals_disc1/edited/*.wav')
     if plot_bf:
         plotter.setup_plot_bf()
 
     print ('Beginning runs')
-    sess.run(init_op)
+    x_batch = np.zeros((n_batch_size, n_steps, 1))
     for t in range(model.n_runs):
         for i in range(n_batch_size):
             #if t > 0:
                 #break
             wfile = np.random.choice(wav_files)
             Fs, x_raw = wavfile.read(wfile)
-            pdb.set_trace()
             start = np.random.randint(x_raw.shape[0] - n_steps)
             x_batch[i,:,0] = x_raw[start:start+n_steps]
             x_batch[i,:,0] = x_batch[i,:,0] / np.max(x_batch[i,:,0])
@@ -96,10 +105,15 @@ with tf.Session() as sess:
                 feed_dict=feed_dict)
 
         if t % 25 == 0:
-            np.save('filters/analysis.npy', analysis_vals)
+            plt.plot(a_vals)
+            plt.show()
+            if t > 0:
+                np.save('filters/analysis.npy', analysis_vals)
+                np.save('filters/synthesis.npy', synthesis_vals)
+                print ('\t Weights Saved')
             np.save('samples/actual.npy', x_batch)
             np.save('samples/reconstruction.npy', x_hat_vals)
-            print ("Files saved")
+            print ("Samples saved | BTW mean(a)=%.2f" % np.mean(a_vals))
 
         if plot_bf and t % 5 == 0:
             print ('\tupdate')
