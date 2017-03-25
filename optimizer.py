@@ -19,11 +19,10 @@ parser.add_option("-l", "--load_filters", action='store_true', dest="load",
 class Model():
     n_filters = 32
     n_filter_width = 128
-    n_steps = 2 ** 14
-    n_sample_rate = 25000
-    n_batch_size = 32
+    n_steps = 2 ** 12
+    n_batch_size = 64
     n_runs = 2 ** 10
-    Lambda = 2.0
+    Lambda = 1000
 
 start = datetime.datetime.now()
 def wlog(stmt):
@@ -45,6 +44,9 @@ x_hat_ph = auto_encoder.decode(a_ph)
 
 cost_op = tf.reduce_mean(tf.square(x_target_ph - x_hat_ph)) + model.Lambda * tf.reduce_mean(a_ph)
 init_op = tf.global_variables_initializer()
+analysis_ph, synthesis_ph = auto_encoder.get_filters_ph()
+norm_a_op = tf.nn.l2_normalize(analysis_ph, 0)
+norm_s_op = tf.nn.l2_normalize(synthesis_ph, 0)
 
 learning_rate_ph = tf.placeholder(tf.float32, shape=[])
 optimizer = tf.train.GradientDescentOptimizer(learning_rate_ph).minimize(cost_op)
@@ -68,7 +70,6 @@ plot_bf  = False
 #with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
 with tf.Session() as sess:
     sess.run(init_op)
-    analysis_ph, synthesis_ph = auto_encoder.get_filters_ph()
     if opt.load:
         print ('loading weights')
         assign_analysis = analysis_ph.assign(np.load('filters/analysis.npy'))
@@ -78,7 +79,7 @@ with tf.Session() as sess:
 
     noise = np.tile(np.random.randn(n_steps, n_filters), (n_batch_size, 1, 1)) * 0
     plotter = Plotter(model)
-    wav_files = glob.glob('data/wavs/rainforest_mammals_disc1/edited/*.wav')
+    wav_files = glob.glob('data/lewicki_audiodata/mammals/*.wav')
     if plot_bf:
         plotter.setup_plot_bf()
 
@@ -104,16 +105,22 @@ with tf.Session() as sess:
             sess.run([analysis_ph, synthesis_ph, a_ph, x_hat_ph, cost_op, optimizer], \
                 feed_dict=feed_dict)
 
+        # Normalize Synthesis Functions
+        #pdb.set_trace()
+        sess.run(norm_a_op)
+        sess.run(norm_s_op)
+        #synthesis_vals = sess.run(synthesis_ph)
+        #pdb.set_trace()
+
         if t % 25 == 0:
-            plt.plot(a_vals)
-            plt.show()
             if t > 0:
-                np.save('filters/analysis.npy', analysis_vals)
-                np.save('filters/synthesis.npy', synthesis_vals)
+                np.save('record/filters/analysis.npy', analysis_vals)
+                np.save('record/filters/synthesis.npy', synthesis_vals)
                 print ('\t Weights Saved')
-            np.save('samples/actual.npy', x_batch)
-            np.save('samples/reconstruction.npy', x_hat_vals)
-            print ("Samples saved | BTW mean(a)=%.2f" % np.mean(a_vals))
+            np.save('record/samples/actual.npy', x_batch)
+            np.save('record/samples/reconstruction.npy', x_hat_vals)
+            np.save('record/activity.npy', a_vals)
+            print ("Samples saved | BTW mean(a)=%.4f" % np.mean(a_vals))
 
         if plot_bf and t % 5 == 0:
             print ('\tupdate')
