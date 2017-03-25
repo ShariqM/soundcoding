@@ -19,6 +19,7 @@ class AutoEncoder(object):
 
     def encode(self, x_input, noise):
         u = tf.nn.conv1d(x_input, self.A, 1, padding='SAME')
+
         r = u + noise
         a = tf.nn.relu(r)
         return a

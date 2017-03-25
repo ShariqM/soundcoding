@@ -19,10 +19,10 @@ parser.add_option("-l", "--load_filters", action='store_true', dest="load",
 class Model():
     n_filters = 32
     n_filter_width = 128
-    n_steps = 2 ** 12
-    n_batch_size = 64
+    n_steps = 5 * 14700
+    n_batch_size = 12
     n_runs = 2 ** 10
-    Lambda = 1000
+    Lambda = 0
 
 start = datetime.datetime.now()
 def wlog(stmt):
@@ -93,7 +93,8 @@ with tf.Session() as sess:
             Fs, x_raw = wavfile.read(wfile)
             start = np.random.randint(x_raw.shape[0] - n_steps)
             x_batch[i,:,0] = x_raw[start:start+n_steps]
-            x_batch[i,:,0] = x_batch[i,:,0] / np.max(x_batch[i,:,0])
+            #x_batch[i,:,0] = x_batch[i,:,0] / np.max(x_batch[i,:,0])
+            x_batch[i,:,0] = x_batch[i,:,0]
             if plot_all and i == 0:
                 plotter.setup_plot_3(x_batch[0,:,0])
         #covX = np.cov(x_batch[:,:,0].T)
