@@ -32,12 +32,12 @@ class AutoEncoder2(object):
     def encode(self, x_input, noise):
         u = tf.einsum("fi,bi->bf", self.A, x_input)
         r = u + noise
-        #return r
+        return r
         #a = tf.sigmoid(r)
         #a = self.spike_activation(r)
-        a = self.thresh_relu(r)
+        #a = self.thresh_relu(r)
         #a = tf.nn.relu(r)
-        return a
+        #return a
 
     def decode(self, u):
         x_hat = tf.einsum("if,bf->bi", self.S, u)

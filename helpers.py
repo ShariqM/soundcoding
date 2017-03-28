@@ -22,8 +22,8 @@ def get_peaks(func):
     return peaks
 
 def get_learning_rate(t):
-    learning_rate = 4e-2
-    bounds = [100 * (2 ** i) for i in range(10)]
+    learning_rate = 5e-9
+    bounds = [1e5 * (2 ** i) for i in range(10)]
     for bound in bounds:
         if t < bound:
             break
@@ -174,6 +174,31 @@ class Plotter():
             self.analysis_data[i].set_ydata(analysis_vals[:,i])
             self.synthesis_data[i].set_ydata(synthesis_vals[:,i])
 
+        self.figure.canvas.draw()
+
+    def setup_plot_bf2(self):
+        num_rows, num_cols = 6,6
+
+        figure, axes = plt.subplots(num_rows, num_cols, figsize=(16,10))
+
+        k = 0
+        plots = []
+        for i in range(num_rows):
+            for j in range(num_cols):
+                plots.append(axes[i,j].plot(np.zeros(self.model.n_input))[0])
+                axes[i,j].set_ylim([-0.6,0.6])
+                axes[i,j].xaxis.set_visible(False)
+                axes[i,j].yaxis.set_visible(False)
+                k = k + 1
+        self.figure = figure
+        self.plots = plots
+        plt.show(block=False)
+
+    def update_plot_bf2(self, synthesis):
+        n_input = synthesis.shape[0]
+        for k in range(len(self.plots)):
+            self.plots[k].set_data(range(n_input), synthesis[:,k])
+            #self.plots[k].set_data(range(n_input), np.random.randn(n_input))
         self.figure.canvas.draw()
 
     def setup_plot_bf(self):
