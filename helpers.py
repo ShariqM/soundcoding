@@ -22,8 +22,8 @@ def get_peaks(func):
     return peaks
 
 def get_learning_rate(t):
-    learning_rate = 1e-3
-    bounds = [20 * (2 ** i) for i in range(10)]
+    learning_rate = 4e-2
+    bounds = [100 * (2 ** i) for i in range(10)]
     for bound in bounds:
         if t < bound:
             break
@@ -31,6 +31,15 @@ def get_learning_rate(t):
         if t == bound:
             print ("Decreasing rate to: ", learning_rate)
     return learning_rate
+
+def snr(x_batch, x_hat_vals):
+    R = x_batch - x_hat_vals
+
+    var = x_batch.var().mean()
+    mse = (R ** 2).mean()
+    snr = 10 * log(var/mse, 10)
+    return snr
+
 
 class Plotter():
     def __init__(self, model):

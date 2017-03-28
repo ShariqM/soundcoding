@@ -13,7 +13,7 @@ def construct_data(source, N, sz):
     elif source == "environment":
         wav_files = glob.glob('%s/envsounds/*.wav' % base)
     elif source == "mammals":
-        wav_files = glob.glob('%s/mammals/edited/*.wav' % base)
+        wav_files = glob.glob('%s/mammals/*.wav' % base)
     elif source == "mix":
         wf1 = glob.glob('%s/envsounds/*.wav' % base)
         wf2 = glob.glob('%s/mammals/*.wav' % base)
