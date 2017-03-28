@@ -22,6 +22,7 @@ ica = FastICA(n_components=nfilters, whiten=True)
 ica.fit(X)
 filters = ica.components_
 
+pdb.set_trace()
 print ('Saving')
 np.save('dict/%s' % opt.source, filters)
 

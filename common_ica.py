@@ -13,11 +13,11 @@ def construct_data(source, N, sz):
     elif source == "environment":
         wav_files = glob.glob('%s/envsounds/*.wav' % base)
     elif source == "mammals":
-        wav_files = glob.glob('%s/mammals/edited/*.wav' % base)
+        wav_files = glob.glob('%s/mammals/*.wav' % base)
     elif source == "mix":
         wf1 = glob.glob('%s/envsounds/*.wav' % base)
         wf2 = glob.glob('%s/mammals/*.wav' % base)
-        ratio = np.ceil(2*len(wf2)/len(wf1)) # 2 to 1 (env to mammals)
+        ratio = int(np.ceil(2*len(wf2)/len(wf1))) # 2 to 1 (env to mammals)
         wav_files = wf1 * ratio + wf2
     elif source == "white":
         for i in range(N):
